@@ -1,3 +1,9 @@
-<div class="pkun-shortocde" id="pkun-shortcode">
-    Welcome to the marlin shortcode
+<?php
+if (!defined('ABSPATH')) {
+    exit;
+}
+?>
+
+<div class="rse-shortcode" id="rse-shortcode">
+    Welcome to the Result Spark Engine shortcode
 </div>

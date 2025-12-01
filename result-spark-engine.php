@@ -1,15 +1,15 @@
 <?php
 
 /**
- * Plugin Name:       Pkun - Boilerplate for WordPress Plugin
+ * Plugin Name:       Result Spark Engine
  * Plugin URI:        https://marlink-checkout.com
- * Description:       Boilerplate for WordPress Plugin
+ * Description:       Result Spark Engine - WordPress Plugin
  * Version:           1.0.0
  * Author:            WildRain
  * Author URI:        https://wildrain.net
  * License:           GPL v2 or later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain:       pkun
+ * Text Domain:       result-spark-engine
  */
 
 if (!defined('ABSPATH')) {
@@ -21,7 +21,7 @@ require_once __DIR__ . '/vendor/autoload.php';
 /**
  * Main plugin class
  */
-final class Pkun
+final class Result_Spark_Engine
 {
     /**
      * Plugin version
@@ -44,7 +44,7 @@ final class Pkun
     /**
      * Initialize singleton instance
      *
-     * @return \Pkun
+     * @return \Result_Spark_Engine
      */
     public static function init()
     {
@@ -64,13 +64,12 @@ final class Pkun
      */
     public function define_constants()
     {
-        define('PKUN_VERSION', self::version);
-        define('PKUN_FILE', __FILE__);
-        define('PKUN_PATH', __DIR__);
-        define('PKUN_URL', plugins_url('', PKUN_FILE));
-        define('PKUN_ASSETS', PKUN_URL . '/assets');
-        define('PKUN_DIR_PATH', plugin_dir_path(__FILE__));
-        define('PKUN_ELEMENTOR', PKUN_DIR_PATH . 'includes/Elementor/');
+        define('RSE_VERSION', self::version);
+        define('RSE_FILE', __FILE__);
+        define('RSE_PATH', __DIR__);
+        define('RSE_URL', plugins_url('', RSE_FILE));
+        define('RSE_ASSETS', RSE_URL . '/assets');
+        define('RSE_DIR_PATH', plugin_dir_path(__FILE__));
     }
 
     /**
@@ -80,7 +79,7 @@ final class Pkun
      */
     public function activate()
     {
-        $installer = new Pkun\Installer();
+        $installer = new Result_Spark_Engine\Installer();
 
         $installer->run();
     }
@@ -92,15 +91,13 @@ final class Pkun
      */
     public function init_plugin()
     {
-        new Pkun\Assets();
-        new Pkun\Pkun_Ajax();
-        new Pkun\Load_Elementor();
-        new Pkun\Generator();
-        new Pkun\Customizer();
+        new Result_Spark_Engine\Assets();
+        new Result_Spark_Engine\RSE_Ajax();
+        new Result_Spark_Engine\Generator();
         if (is_admin()) {
-            new Pkun\Admin();
+            new Result_Spark_Engine\Admin();
         } else {
-            new Pkun\Frontend();
+            new Result_Spark_Engine\Frontend();
         }
     }
 }
@@ -108,11 +105,12 @@ final class Pkun
 /**
  * Initialize main plugin
  *
- * @return \Pkun
+ * @return \Result_Spark_Engine
  */
-function pkun()
+function result_spark_engine()
 {
-    return Pkun::init();
+    return Result_Spark_Engine::init();
 }
 
-pkun();
+result_spark_engine();
+

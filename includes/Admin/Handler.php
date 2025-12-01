@@ -1,6 +1,10 @@
 <?php
 
-namespace Pkun\Admin;
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+namespace Result_Spark_Engine\Admin;
 
 class Handler
 {

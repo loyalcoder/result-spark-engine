@@ -1,6 +1,10 @@
 <?php
 
-namespace Pkun;
+namespace Result_Spark_Engine;
+
+if (!defined('ABSPATH')) {
+    exit;
+}
 
 class Installer
 {
@@ -22,13 +26,13 @@ class Installer
      */
     public function add_version()
     {
-        $installed = get_option('pkun_installed');
+        $installed = get_option('rse_installed');
 
         if (!$installed) {
-            update_option('pkun_installed', time());
+            update_option('rse_installed', time());
         }
 
-        update_option('pkun_version', PKUN_VERSION);
+        update_option('rse_version', RSE_VERSION);
     }
 
     /**
@@ -42,7 +46,7 @@ class Installer
 
         $charset_collate = $wpdb->get_charset_collate();
 
-        $checkout_scheme = "CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}pkun_boilerplate` (
+        $checkout_scheme = "CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}rse_boilerplate` (
             `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
             `name` varchar(250) DEFAULT NULL,
             `value` varchar(250) DEFAULT NULL,

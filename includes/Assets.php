@@ -1,6 +1,10 @@
 <?php
 
-namespace Pkun;
+namespace Result_Spark_Engine;
+
+if (!defined('ABSPATH')) {
+    exit;
+}
 
 /**
  * Assets class handler
@@ -16,37 +20,37 @@ class Assets
     }
 
     /**
-     * Pkun scripts
+     * Result Spark Engine scripts
      *
      * @return array
      */
     public function get_scripts()
     {
         return [
-            'pkun-script' => [
-                'src'     => PKUN_ASSETS . '/js/frontend.js',
-                'version' => filemtime(PKUN_PATH . '/assets/js/frontend.js'),
+            'rse-script' => [
+                'src'     => RSE_ASSETS . '/js/frontend.js',
+                'version' => filemtime(RSE_PATH . '/assets/js/frontend.js'),
                 'deps'    => ['jquery']
             ],
-            'pkun-enquiry-script' => [
-                'src'     => PKUN_ASSETS . '/js/enquiry.js',
-                'version' => filemtime(PKUN_PATH . '/assets/js/enquiry.js'),
+            'rse-enquiry-script' => [
+                'src'     => RSE_ASSETS . '/js/enquiry.js',
+                'version' => filemtime(RSE_PATH . '/assets/js/enquiry.js'),
                 'deps'    => ['jquery']
             ]
         ];
     }
 
     /**
-     * Pkun styles
+     * Result Spark Engine styles
      *
      * @return array
      */
     public function get_styles()
     {
         return [
-            'pkun-style' => [
-                'src'     => PKUN_ASSETS . '/css/frontend.css',
-                'version' => filemtime(PKUN_PATH . '/assets/css/frontend.css'),
+            'rse-style' => [
+                'src'     => RSE_ASSETS . '/css/frontend.css',
+                'version' => filemtime(RSE_PATH . '/assets/css/frontend.css'),
             ]
         ];
     }
@@ -61,19 +65,19 @@ class Assets
 
         foreach ($scripts as $handle => $script) {
             $deps = isset($script['deps']) ? $script['deps'] : false;
-            $version = isset($script['version']) ? $script['version'] : PKUN_VERSION;
+            $version = isset($script['version']) ? $script['version'] : RSE_VERSION;
 
             wp_register_script($handle, $script['src'], $deps, $version, true);
         }
 
-        wp_localize_script('pkun-enquiry-script', 'pkun_data', [
+        wp_localize_script('rse-enquiry-script', 'rse_data', [
             'ajax_url' => admin_url('admin-ajax.php'),
-            'message' => __('Message from enquiry form', 'pkun'),
+            'message' => __('Message from enquiry form', 'result-spark-engine'),
         ]);
 
         foreach ($styles as $handle => $style) {
             $deps = isset($style['deps']) ? $style['deps'] : false;
-            $version = isset($style['version']) ? $style['version'] : PKUN_VERSION;
+            $version = isset($style['version']) ? $style['version'] : RSE_VERSION;
 
             wp_register_style($handle, $style['src'], $deps, $version);
         }

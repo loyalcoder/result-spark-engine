@@ -1,6 +1,10 @@
 <?php
+namespace Result_Spark_Engine\Traits;
 
-namespace Pkun\Traits;
+if (!defined('ABSPATH')) {
+    exit;
+}
+
 
 /**
  * Test Trait

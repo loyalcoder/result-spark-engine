@@ -1,6 +1,10 @@
 <?php
 
-namespace Pkun\Admin;
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+namespace Result_Spark_Engine\Admin;
 
 /**
  * Admin menu class
@@ -22,12 +26,12 @@ class Menu
      */
     public function admin_menu()
     {
-        $parent_slug = 'pkun-dashboard';
+        $parent_slug = 'rse-dashboard';
         $capability = 'manage_options';
 
-        add_menu_page(__('Pkun Dashboard', 'pkun'), __('Pkun', 'pkun'), $capability, $parent_slug, [$this, 'dashboard_page'], 'dashicons-buddicons-groups');
-        add_submenu_page($parent_slug, __('Settings', 'pkun'), __('Settings', 'pkun'), $capability, $parent_slug, [$this, 'dashboard_page']);
-        add_submenu_page($parent_slug, __('Report', 'pkun'), __('Report', 'pkun'), $capability, 'pkun-report', [$this, 'report_page']);
+        add_menu_page(__('Result Spark Engine Dashboard', 'result-spark-engine'), __('Result Spark Engine', 'result-spark-engine'), $capability, $parent_slug, [$this, 'dashboard_page'], 'dashicons-buddicons-groups');
+        add_submenu_page($parent_slug, __('Settings', 'result-spark-engine'), __('Settings', 'result-spark-engine'), $capability, $parent_slug, [$this, 'dashboard_page']);
+        add_submenu_page($parent_slug, __('Report', 'result-spark-engine'), __('Report', 'result-spark-engine'), $capability, 'rse-report', [$this, 'report_page']);
     }
 
     /**
@@ -42,7 +46,7 @@ class Menu
     }
 
     /**
-     * Pkun report page
+     * Result Spark Engine report page
      *
      * @return void
      */

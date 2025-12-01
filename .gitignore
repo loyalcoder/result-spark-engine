@@ -1,0 +1,51 @@
+# WordPress
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Composer
+/vendor/
+composer.lock
+
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+yarn.lock
+
+# Build files
+/assets/css/*.css
+/assets/css/*.css.map
+/assets/js/*.js
+/assets/js/*.js.map
+!assets/css/*.min.css
+!assets/js/*.min.js
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+

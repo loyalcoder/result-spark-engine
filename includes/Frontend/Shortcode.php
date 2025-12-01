@@ -1,6 +1,10 @@
 <?php
 
-namespace Pkun\Frontend;
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+namespace Result_Spark_Engine\Frontend;
 
 /**
  * Shortcode class
@@ -12,8 +16,8 @@ class Shortcode
      */
     public function __construct()
     {
-        add_shortcode('pkun_shortcode', [$this, 'pkun_shortcode']);
-        add_shortcode('pkun_enquiry', [$this, 'pkun_enquiry']);
+        add_shortcode('rse_shortcode', [$this, 'rse_shortcode']);
+        add_shortcode('rse_enquiry', [$this, 'rse_enquiry']);
     }
 
     /**
@@ -23,10 +27,10 @@ class Shortcode
      * @param string $content
      * @return string
      */
-    public function pkun_shortcode($atts, $content = null)
+    public function rse_shortcode($atts, $content = null)
     {
-        wp_enqueue_script('pkun-script');
-        wp_enqueue_style('pkun-style');
+        wp_enqueue_script('rse-script');
+        wp_enqueue_style('rse-style');
 
         ob_start();
 
@@ -42,14 +46,14 @@ class Shortcode
      * @param string $content
      * @return string
      */
-    public function pkun_enquiry($atts, $content = null)
+    public function rse_enquiry($atts, $content = null)
     {
-        wp_enqueue_script('pkun-enquiry-script');
-        wp_enqueue_style('pkun-style');
+        wp_enqueue_script('rse-enquiry-script');
+        wp_enqueue_style('rse-style');
 
-        // wp_localize_script('pkun-enquiry-script', 'pkun_data', [
+        // wp_localize_script('rse-enquiry-script', 'rse_data', [
         //     'ajax_url' => admin_url('admin-ajax.php'),
-        //     'message' => __('Message from enquiry form', 'pkun'),
+        //     'message' => __('Message from enquiry form', 'result-spark-engine'),
         // ]);
 
         ob_start();

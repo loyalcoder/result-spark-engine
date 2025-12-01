@@ -1,8 +1,12 @@
 <?php
 
-namespace Pkun\Admin;
+if (!defined('ABSPATH')) {
+    exit;
+}
 
-use Pkun\Traits\Test;
+namespace Result_Spark_Engine\Admin;
+
+use Result_Spark_Engine\Traits\Test;
 
 /**
  * Handle settings

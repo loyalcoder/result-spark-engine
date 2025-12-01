@@ -1,6 +1,10 @@
 <?php
 
-namespace Pkun;
+namespace Result_Spark_Engine;
+
+if (!defined('ABSPATH')) {
+    exit;
+}
 
 /**
  * Frontend class
