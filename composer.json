@@ -1,0 +1,31 @@
+{
+  "name": "wildrain/pkun",
+  "description": "Boilerplate for WordPress Plugin",
+  "type": "wordpress-plugin",
+  "license": "GPLv2",
+  "authors": [
+    {
+      "name": "wildrain",
+      "email": "roman.ul.ferdosh@gmail.com"
+    }
+  ],
+  "minimum-stability": "dev",
+  "require": {
+    "nesbot/carbon": "2.x-dev",
+    "cmb2/cmb2": "dev-master",
+    "johnbillion/extended-cpts": "5.0.x-dev"
+  },
+  "autoload": {
+    "classmap": [
+      "includes"
+    ],
+    "psr-4": {
+      "Pkun\\": "includes/"
+    },
+    "files": [
+      "vendor/cmb2/cmb2/init.php",
+      "includes/functions.php",
+      "includes/Library/CMB2_Tags/cmb2-field-type-tags.php"
+    ]
+  }
+}
