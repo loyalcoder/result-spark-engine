@@ -6,16 +6,18 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+use Result_Spark_Engine\Traits\Post_Type_Taxonomy;
+
 /**
  * Generator class
  * 
- * @description: Extended CPTs is a library which provides extended functionality to WordPress custom post types and taxonomies. 
- * This allows developers to quickly build post types and taxonomies without having to write the same code again and again.
- * 
- * @api https://github.com/johnbillion/extended-cpts
+ * @description: Easy way to register custom post types and taxonomies.
+ * Just use the trait methods with the name and it will auto-generate everything.
  */
 class Generator
 {
+    use Post_Type_Taxonomy;
+
     /**
      * Class initialize
      */
@@ -24,80 +26,22 @@ class Generator
         add_action('init', [$this, 'init_generator']);
     }
 
+    /**
+     * Initialize generator - Register your post types and taxonomies here
+     */
     public function init_generator()
     {
-        register_extended_post_type( 'story', array(
+        // Register students post type
+        $this->register_post_type('students');
 
-            # Add the post type to the site's main RSS feed:
-            'show_in_feed' => true,
-    
-            # Use the block editor:
-            'show_in_rest' => true,
-    
-            # Show all posts on the post type archive:
-            'archive' => array(
-                'nopaging' => true
-            ),
-    
-            # Add some custom columns to the admin screen:
-            'admin_cols' => array(
-                'featured_image' => array(
-                    'title'          => 'Illustration',
-                    'featured_image' => 'thumbnail'
-                ),
-                'published' => array(
-                    'title'       => 'Published',
-                    'meta_key'    => 'published_date',
-                    'date_format' => 'd/m/Y'
-                ),
-                'genre' => array(
-                    'taxonomy' => 'genre'
-                )
-            ),
-    
-            # Add a dropdown filter to the admin screen:
-            'admin_filters' => array(
-                'genre' => array(
-                    'taxonomy' => 'genre'
-                )
-            )
-    
-        ), array(
-    
-            # Override the base names used for labels:
-            'singular' => 'Story',
-            'plural'   => 'Stories',
-            'slug'     => 'stories'
-    
-        ) );
-
-
-        register_extended_taxonomy( 'genre', 'story', array(
-
-            # Use radio buttons in the meta box for this taxonomy on the post editing screen:
-            'meta_box' => 'radio',
-        
-            # Show this taxonomy in the 'At a Glance' dashboard widget:
-            'dashboard_glance' => true,
-        
-            # Add a custom column to the admin screen:
-            'admin_cols' => array(
-                'updated' => array(
-                    'title'       => 'Updated',
-                    'meta_key'    => 'updated_date',
-                    'date_format' => 'd/m/Y'
-                ),
-            ),
-        
-        ), array(
-        
-            # Override the base names used for labels:
-            'singular' => 'Genre',
-            'plural'   => 'Genres',
-            'slug'     => 'story-genre'
-        
-        ) );
+        // Register taxonomies for students
+        $this->register_taxonomy('class_level', 'students');
+        $this->register_taxonomy('session', 'students');
+        $this->register_taxonomy('academic_year', 'students');
+        $this->register_taxonomy('department', 'students');
+        $this->register_taxonomy('section', 'students');
+        $this->register_taxonomy('shift', 'students');
+        $this->register_taxonomy('subject', 'students');
+        $this->register_taxonomy('grade', 'students');
     }
-
-    
 }

@@ -1,10 +1,10 @@
 <?php
 
+namespace Result_Spark_Engine\Admin;
+
 if (!defined('ABSPATH')) {
     exit;
 }
-
-namespace Result_Spark_Engine\Admin;
 
 /**
  * Admin menu class

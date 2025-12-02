@@ -1,10 +1,10 @@
 <?php
 
+namespace Result_Spark_Engine\Admin;
+
 if (!defined('ABSPATH')) {
     exit;
 }
-
-namespace Result_Spark_Engine\Admin;
 
 class Handler
 {
@@ -13,7 +13,7 @@ class Handler
      */
     function __construct()
     {
-        add_filter('use_block_editor_for_post_type', [$this, 'disable_gutenberg_for_movie'], 10, 2);
+        //add_filter('use_block_editor_for_post_type', [$this, 'disable_gutenberg_for_movie'], 10, 2);
     }
 
     /**

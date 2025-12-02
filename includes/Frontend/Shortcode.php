@@ -1,10 +1,10 @@
 <?php
 
+namespace Result_Spark_Engine\Frontend;
+
 if (!defined('ABSPATH')) {
     exit;
 }
-
-namespace Result_Spark_Engine\Frontend;
 
 /**
  * Shortcode class
