@@ -33,11 +33,12 @@ class Generator
     {
         // Register students post type
         $this->register_post_type('students');
+        $this->register_post_type('exam');
 
         // Register taxonomies for students
-        $this->register_taxonomy('class_level', 'students');
-        $this->register_taxonomy('session', 'students');
-        $this->register_taxonomy('academic_year', 'students');
+        $this->register_taxonomy('class_level', ['students', 'exam']);
+        $this->register_taxonomy('session', ['students', 'exam']);
+        $this->register_taxonomy('academic_year', ['students', 'exam']);
         $this->register_taxonomy('department', 'students');
         $this->register_taxonomy('section', 'students');
         $this->register_taxonomy('shift', 'students');
