@@ -11,6 +11,9 @@
   ],
   "minimum-stability": "dev",
   "require": {},
+  "config": {
+    "autoloader-suffix": "ResultSparkEngine"
+  },
   "autoload": {
     "classmap": [
       "includes"
