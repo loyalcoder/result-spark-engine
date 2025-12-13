@@ -16,5 +16,10 @@
 	},
 	"devDependencies": {
 		"@wordpress/scripts": "^31.1.0"
+	},
+	"dependencies": {
+		"@wordpress/interactivity": "^6.36.0",
+		"lucide-react": "^0.561.0",
+		"uuid": "^13.0.0"
 	}
 }

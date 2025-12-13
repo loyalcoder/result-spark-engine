@@ -12,9 +12,49 @@
 		"html": false
 	},
 	"attributes": {
-		"content": {
+		"showLabel": {
+			"type": "boolean",
+			"default": true
+		},
+		"name": {
 			"type": "string",
-			"default": "We offers high-quality films and the best documentary selection, and the ability to browse alphabetically"
+			"default": "spe-first-name"
+		},
+		"help": {
+			"type": "string",
+			"default": ""
+		},
+		"label": {
+			"type": "string",
+			"default": "Label"
+		},
+		"labelPosition": {
+			"type": "string",
+			"default": "top"
+		},
+		"placeholder": {
+			"type": "string",
+			"default": "Placeholder"
+		},
+		"type": {
+			"type": "string",
+			"default": "text"
+		},
+		"isRequired": {
+			"type": "boolean",
+			"default": true
+		},
+		"passwordToggle": {
+			"type": "boolean",
+			"default": false
+		},
+		"labelColor": {
+			"type": "string",
+			"default": "#000"
+		},
+		"helpColor": {
+			"type": "string",
+			"default": "#000"
 		}
 	},
 	"textdomain": "result-spark-engine",
