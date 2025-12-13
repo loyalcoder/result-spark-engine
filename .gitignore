@@ -49,3 +49,5 @@ logs/
 *.temp
 .cache/
 
+build/
+.DS_Store

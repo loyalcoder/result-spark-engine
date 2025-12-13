@@ -1,0 +1,25 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "form-builder/form-wrapper",
+	"version": "0.1.0",
+	"title": "Form Wrapper",
+	"category": "widgets",
+	"icon": "smiley",
+	"description": "Example block scaffolded with Create Block tool.",
+	"example": {},
+	"supports": {
+		"html": false
+	},
+	"attributes": {
+		"content": {
+			"type": "string",
+			"default": "We offers high-quality films and the best documentary selection, and the ability to browse alphabetically"
+		}
+	},
+	"textdomain": "result-spark-engine",
+	"editorScript": "file:./index.js",
+	"editorStyle": "file:./index.css",
+	"style": "file:./style-index.css",
+	"viewScript": "file:./view.js"
+}
