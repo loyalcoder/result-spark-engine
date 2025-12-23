@@ -30,6 +30,22 @@ class Settings
     }
 
     /**
+     * Mark Entry page handler
+     *
+     * @return void
+     */
+    public function mark_entry_page()
+    {
+        $template = __DIR__ . '/views/mark-entry.php';
+
+        if (file_exists($template)) {
+            include $template;
+        } else {
+            echo '<div class="wrap"><h1>' . esc_html__('Mark Entry', 'result-spark-engine') . '</h1><p>' . esc_html__('Mark entry template not found.', 'result-spark-engine') . '</p></div>';
+        }
+    }
+
+    /**
      * Report handler
      *
      * @return void

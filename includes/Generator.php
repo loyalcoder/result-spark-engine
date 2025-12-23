@@ -34,6 +34,11 @@ class Generator
         // Register students post type
         $this->register_post_type('students');
         $this->register_post_type('exam');
+        
+        // Register subject post type
+        $this->register_post_type('subject', [
+            'menu_icon' => 'dashicons-book-alt',
+        ]);
 
         // Register taxonomies for students
         $this->register_taxonomy('class_level', ['students', 'exam']);
@@ -42,7 +47,11 @@ class Generator
         $this->register_taxonomy('department', 'students');
         $this->register_taxonomy('section', 'students');
         $this->register_taxonomy('shift', 'students');
-        $this->register_taxonomy('subject', 'students');
-        $this->register_taxonomy('grade', 'students');
+        
+        // Subject taxonomy - keep on students for mark entry, also add to subject post type
+        $this->register_taxonomy('subject', ['students', 'subject']);
+        
+        // Grade taxonomy - move to subject post type
+        $this->register_taxonomy('grade', 'subject');
     }
 }

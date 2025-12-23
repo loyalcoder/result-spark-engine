@@ -17,6 +17,7 @@ class Assets
     public function __construct()
     {
         add_action('wp_enqueue_scripts', [$this, 'register_assets']);
+        add_action('admin_enqueue_scripts', [$this, 'register_admin_assets']);
     }
 
     /**
@@ -80,6 +81,42 @@ class Assets
             $version = isset($style['version']) ? $style['version'] : RSE_VERSION;
 
             wp_register_style($handle, $style['src'], $deps, $version);
+        }
+    }
+
+    /**
+     * Register admin assets
+     *
+     * @param string $hook Current admin page hook.
+     * @return void
+     */
+    public function register_admin_assets($hook)
+    {
+        // Enqueue mark entry assets
+        if ('rse_page_rse-mark-entry' === $hook) {
+            wp_enqueue_style(
+                'rse-mark-entry',
+                RSE_ASSETS . '/css/mark-entry.css',
+                [],
+                RSE_VERSION
+            );
+            wp_enqueue_script(
+                'rse-mark-entry',
+                RSE_ASSETS . '/js/mark-entry.js',
+                ['jquery'],
+                RSE_VERSION,
+                true
+            );
+
+            wp_localize_script(
+                'rse-mark-entry',
+                'rseMarkEntry',
+                [
+                    'ajax_url' => admin_url('admin-ajax.php'),
+                    'nonce' => wp_create_nonce('rse_dashboard_nonce'),
+                    'loading_text' => esc_html__('Loading...', 'result-spark-engine'),
+                ]
+            );
         }
     }
 }
