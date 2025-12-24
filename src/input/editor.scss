@@ -1,0 +1,93 @@
+/**
+ * The following styles get applied inside the editor only.
+ *
+ * Replace them with your own styles or remove the file completely.
+ */
+
+.spark-engine-input-wrapper-block {
+	width: 100%;
+	display: grid;
+	gap: 0.75rem;
+	align-items: center;
+}
+.spark-engine-input-label {
+	font-weight: 500;
+	font-size: 0.875rem;
+	color: var(--spe-label-color, "#000");
+}
+.spark-engine-input-required {
+	color: #f00;
+}
+.spark-engine-input-wrapper {
+	position: relative;
+	width: 100%;
+}
+.spark-engine-label-left {
+	display: grid;
+	grid-template-columns: auto 1fr;
+	gap: 0.75rem;
+	align-items: center;
+}
+.spark-engine-input-password-toggle-icon {
+	position: absolute;
+	top: 50%;
+	right: 1rem;
+	transform: translateY(-50%);
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+.spark-engine-input-password-toggle-true .spark-engine-input {
+	padding-right: 2.5rem;
+}
+.spark-engine-input {
+	font-size: 0.875rem;
+	display: block;
+	width: 100%;
+	padding: 0.8rem;
+	border-radius: 0.625rem;
+	border: 1px solid var(--spe-border-color, #e5e5e5);
+	background-color: var(--spe-background-color, transparent);
+	box-shadow: 0 1px 2px 0 #0000000d;
+	box-sizing: border-box;
+}
+.spark-engine-input::placeholder {
+  color: var(--spe-placeholder-color, #000);
+  opacity: 1;
+}
+.spark-engine-input::-ms-input-placeholder {
+  color: var(--spe-placeholder-color, #000);
+}
+.spark-engine-input-help-text-wrapper {
+	font-size: 0.75rem;
+	color: var(--spe-help-color, #4f4f4f);
+	margin: 0;
+	display: flex;
+	gap: 4px;
+}
+.spark-engine-input-help-icon {
+	flex-shrink: 0;
+}
+.spark-engine-input-color {
+	-webkit-appearance: none;
+	border: none;
+	padding: 0;
+	width: 50px;
+	height: 50px;
+	cursor: pointer;
+	background: none;
+}
+/* Chrome, Edge, Safari */
+.spark-engine-input-color::-webkit-color-swatch-wrapper {
+	padding: 0;
+	border: 0px;
+}
+.spark-engine-input-color::-webkit-color-swatch {
+	border: 0px;
+}
+
+/* Firefox */
+.spark-engine-input-color::-moz-color-swatch {
+	border: 0px;
+}

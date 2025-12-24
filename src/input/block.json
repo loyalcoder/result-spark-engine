@@ -1,9 +1,9 @@
 {
 	"$schema": "https://schemas.wp.org/trunk/block.json",
 	"apiVersion": 3,
-	"name": "form-builder/form-wrapper",
+	"name": "form-builder/input-field",
 	"version": "0.1.0",
-	"title": "Form Wrapper",
+	"title": "Input Field",
 	"category": "widgets",
 	"icon": "smiley",
 	"description": "Example block scaffolded with Create Block tool.",
@@ -53,6 +53,18 @@
 			"default": "#000"
 		},
 		"helpColor": {
+			"type": "string",
+			"default": "#000"
+		},
+		"borderColor": {
+			"type": "string",
+			"default": "#e5e5e5"
+		},
+		"backgroundColor": {
+			"type": "string",
+			"default": "#fff"
+		},
+		"placeholderColor": {
 			"type": "string",
 			"default": "#000"
 		}

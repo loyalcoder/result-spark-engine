@@ -13,7 +13,7 @@ import { v4 as uuidv4 } from "uuid";
  * @see https://developer.wordpress.org/block-editor/reference-guides/packages/packages-block-editor/#useblockprops
  */
 import { InspectorControls, useBlockProps } from "@wordpress/block-editor";
-import { InnerBlocks, ColorPaletteControl } from "@wordpress/block-editor";
+import { ColorPaletteControl } from "@wordpress/block-editor";
 import {
 	PanelBody,
 	ToggleControl,
@@ -27,8 +27,6 @@ import {
  * @see https://www.npmjs.com/package/@wordpress/scripts#using-css
  */
 import "./editor.scss";
-import { useId } from "react";
-
 /**
  * The edit function describes the structure of your block in the context of the
  * editor. This represents what the editor will render when the block is used.
@@ -50,6 +48,9 @@ export default function Edit({ attributes, setAttributes }) {
 		labelPosition,
 		labelColor,
 		helpColor,
+		borderColor,
+		backgroundColor,
+		placeholderColor,
 	} = attributes;
 	const blockProps = useBlockProps();
 	const id = uuidv4();
@@ -65,45 +66,126 @@ export default function Edit({ attributes, setAttributes }) {
 
 	const colorSettings = [
 		{
-			label: __("Label Color", "borobazar-helper"),
+			label: __("Label Color", "result-spark-engine"),
 			color: labelColor,
 			onChange: (value) => setAttributes({ labelColor: value }),
 		},
 		{
-			label: __("Help Color", "borobazar-helper"),
+			label: __("Help Color", "result-spark-engine"),
 			color: helpColor,
 			onChange: (value) => setAttributes({ helpColor: value }),
 		},
+		...(type !== "color"
+			? [
+					{
+						label: __("Border Color", "result-spark-engine"),
+						color: borderColor,
+						onChange: (value) => setAttributes({ borderColor: value }),
+					},
+					{
+						label: __("Background Color", "result-spark-engine"),
+						color: backgroundColor,
+						onChange: (value) => setAttributes({ backgroundColor: value }),
+					},
+			  ]
+			: []),
+		...(placeholderInput?.includes(type)
+			? [
+					{
+						label: __("Placeholder Color", "result-spark-engine"),
+						color: placeholderColor,
+						onChange: (value) => setAttributes({ placeholderColor: value }),
+					},
+			  ]
+			: []),
 	];
 
 	return (
-		<div {...blockProps}>
-			{showLabel && label ? (
-				<label htmlFor={`${name}-${id}`}>
-					{label}
-					{isRequired ? <span>*</span> : ""}
-				</label>
-			) : (
-				""
-			)}
-			<input
-				id={`${name}-${id}`}
-				type={type}
-				name={name}
-				placeholder={placeholder}
-			/>
-			{passwordToggle ? <Eye /> : ""}
-			{help ? (
-				<p>
-					{help} <Info />
-				</p>
-			) : (
-				""
-			)}
+		<div
+			{...blockProps}
+			style={{
+				"--spe-label-color": labelColor,
+				"--spe-help-color": helpColor,
+				"--spe-background-color": backgroundColor,
+				"--spe-border-color": borderColor,
+				"--spe-placeholder-color": placeholderColor,
+			}}
+		>
+			<div className="spark-engine-input-wrapper-block">
+				{showLabel && label && labelPosition === "top" ? (
+					<label className="spark-engine-input-label" htmlFor={`${name}-${id}`}>
+						{label}
+						{isRequired ? (
+							<span className="spark-engine-input-required">*</span>
+						) : (
+							""
+						)}
+					</label>
+				) : (
+					""
+				)}
+				<div
+					className={`spark-engine-input-wrapper spark-engine-label-${labelPosition} `}
+				>
+					{showLabel && label && labelPosition === "left" ? (
+						<label
+							className="spark-engine-input-label"
+							htmlFor={`${name}-${id}`}
+						>
+							{label}
+							{isRequired ? (
+								<span className="spark-engine-input-required">*</span>
+							) : (
+								""
+							)}
+						</label>
+					) : (
+						""
+					)}
+					<div
+						className={`${
+							type === "password" && passwordToggle
+								? `spark-engine-input-password-toggle-${passwordToggle}`
+								: ""
+						}`}
+					>
+						<input
+							id={`${name}-${id}`}
+							type={type}
+							name={name}
+							placeholder={placeholder}
+							className={
+								type !== "color"
+									? "spark-engine-input"
+									: "spark-engine-input-color"
+							}
+						/>
+						{passwordToggle && type === "password" ? (
+							<div className="spark-engine-input-password-toggle-icon">
+								<Eye />
+							</div>
+						) : (
+							""
+						)}
+					</div>
+				</div>
+				{help ? (
+					<p className="spark-engine-input-help-text-wrapper">
+						<Info
+							height="1em"
+							width="1em"
+							className="spark-engine-input-help-icon"
+						/>
+						{help}
+					</p>
+				) : (
+					""
+				)}
+			</div>
 
 			<InspectorControls group="styles">
 				<PanelBody
-					title={__("Layout Settings", "borobazar-helper")}
+					title={__("Layout Settings", "result-spark-engine")}
 					initialOpen={true}
 				>
 					<SelectControl
@@ -155,7 +237,7 @@ export default function Edit({ attributes, setAttributes }) {
 							onChange={(placeholder) => setAttributes({ placeholder })}
 							placeholder={__(
 								"Enter label content here...",
-								"borobazar-helper",
+								"result-spark-engine",
 							)}
 						/>
 					) : (
@@ -172,7 +254,7 @@ export default function Edit({ attributes, setAttributes }) {
 								onChange={(label) => setAttributes({ label })}
 								placeholder={__(
 									"Enter placeholder content here...",
-									"borobazar-helper",
+									"result-spark-engine",
 								)}
 							/>
 							<ToggleControl
@@ -192,7 +274,10 @@ export default function Edit({ attributes, setAttributes }) {
 						value={name}
 						label="Name"
 						onChange={(name) => setAttributes({ name })}
-						placeholder={__("Enter name content here...", "borobazar-helper")}
+						placeholder={__(
+							"Enter name content here...",
+							"result-spark-engine",
+						)}
 					/>
 					<TextControl
 						__nextHasNoMarginBottom
@@ -201,7 +286,10 @@ export default function Edit({ attributes, setAttributes }) {
 						label="Help"
 						value={help}
 						onChange={(help) => setAttributes({ help })}
-						placeholder={__("Enter help content here...", "borobazar-helper")}
+						placeholder={__(
+							"Enter help content here...",
+							"result-spark-engine",
+						)}
 					/>
 					{type === "password" ? (
 						<ToggleControl
@@ -217,7 +305,7 @@ export default function Edit({ attributes, setAttributes }) {
 
 				{/* Color settings */}
 				<PanelBody
-					title={__("Color settings", "borobazar-helper")}
+					title={__("Color settings", "result-spark-engine")}
 					initialOpen={false}
 				>
 					{colorSettings.map((palette) => (
