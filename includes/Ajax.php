@@ -76,52 +76,27 @@ class RSE_Ajax
             ]);
         }
 
-        // Get all subjects and filter by checking if students in exam's class have them
-        $all_subjects = get_terms([
-            'taxonomy' => 'subject',
-            'hide_empty' => false,
+        // Get subject posts that have this class level
+        $subject_posts = get_posts([
+            'post_type' => 'subject',
+            'post_status' => 'publish',
+            'posts_per_page' => -1,
+            'orderby' => 'title',
+            'order' => 'ASC',
+            'tax_query' => [
+                [
+                    'taxonomy' => 'class_level',
+                    'field' => 'term_id',
+                    'terms' => $exam_class_terms,
+                ],
+            ],
         ]);
 
-        $subjects = [];
-        if (!empty($all_subjects) && !is_wp_error($all_subjects)) {
-            foreach ($all_subjects as $subject) {
-                // Check if there are students with this class and subject
-                $students_with_subject = get_posts([
-                    'post_type' => 'students',
-                    'post_status' => 'publish',
-                    'posts_per_page' => 1,
-                    'tax_query' => [
-                        'relation' => 'AND',
-                        [
-                            'taxonomy' => 'class_level',
-                            'field' => 'term_id',
-                            'terms' => $exam_class_terms,
-                        ],
-                        [
-                            'taxonomy' => 'subject',
-                            'field' => 'term_id',
-                            'terms' => $subject->term_id,
-                        ],
-                    ],
-                ]);
-
-                if (!empty($students_with_subject)) {
-                    $subjects[] = $subject;
-                }
-            }
-        }
-
-        if (is_wp_error($subjects)) {
-            wp_send_json_error([
-                'message' => $subjects->get_error_message(),
-            ]);
-        }
-
         $subjects_data = [];
-        foreach ($subjects as $subject) {
+        foreach ($subject_posts as $subject) {
             $subjects_data[] = [
-                'id' => $subject->term_id,
-                'name' => $subject->name,
+                'id' => $subject->ID,
+                'name' => $subject->post_title,
             ];
         }
 

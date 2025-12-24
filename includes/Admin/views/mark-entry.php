@@ -65,47 +65,30 @@ $exams = get_posts([
     'order' => 'ASC',
 ]);
 
-// Get subjects if exam is selected
+// Get subjects if exam is selected (using subject post type)
 $subjects = [];
 if ($filter_exam > 0) {
     // Get exam's class level
     $exam_class_terms = wp_get_post_terms($filter_exam, 'class_level', ['fields' => 'ids']);
     
     if (!empty($exam_class_terms)) {
-        // Get all subjects first
-        $all_subjects = get_terms([
-            'taxonomy' => 'subject',
-            'hide_empty' => false,
+        // Get subject posts that have this class level
+        $subject_posts = get_posts([
+            'post_type' => 'subject',
+            'post_status' => 'publish',
+            'posts_per_page' => -1,
+            'orderby' => 'title',
+            'order' => 'ASC',
+            'tax_query' => [
+                [
+                    'taxonomy' => 'class_level',
+                    'field' => 'term_id',
+                    'terms' => $exam_class_terms,
+                ],
+            ],
         ]);
         
-        // Filter subjects by checking if any students in the exam's class have this subject
-        if (!empty($all_subjects) && !is_wp_error($all_subjects)) {
-            foreach ($all_subjects as $subject) {
-                // Check if there are students with this class and subject
-                $students_with_subject = get_posts([
-                    'post_type' => 'students',
-                    'post_status' => 'publish',
-                    'posts_per_page' => 1,
-                    'tax_query' => [
-                        'relation' => 'AND',
-                        [
-                            'taxonomy' => 'class_level',
-                            'field' => 'term_id',
-                            'terms' => $exam_class_terms,
-                        ],
-                        [
-                            'taxonomy' => 'subject',
-                            'field' => 'term_id',
-                            'terms' => $subject->term_id,
-                        ],
-                    ],
-                ]);
-                
-                if (!empty($students_with_subject)) {
-                    $subjects[] = $subject;
-                }
-            }
-        }
+        $subjects = $subject_posts;
     }
 }
 
@@ -116,29 +99,31 @@ if ($filter_exam > 0 && $filter_subject > 0) {
     $exam_class_terms = wp_get_post_terms($filter_exam, 'class_level', ['fields' => 'ids']);
     
     if (!empty($exam_class_terms)) {
-        // Get students with this class level and subject
-        $args = [
-            'post_type' => 'students',
-            'post_status' => 'publish',
-            'posts_per_page' => -1,
-            'orderby' => 'title',
-            'order' => 'ASC',
-            'tax_query' => [
-                'relation' => 'AND',
-                [
-                    'taxonomy' => 'class_level',
-                    'field' => 'term_id',
-                    'terms' => $exam_class_terms,
-                ],
-                [
-                    'taxonomy' => 'subject',
-                    'field' => 'term_id',
-                    'terms' => $filter_subject,
-                ],
-            ],
-        ];
+        // Get subject post to check its class level
+        $subject_post = get_post($filter_subject);
         
-        $students = get_posts($args);
+        if ($subject_post && 'subject' === $subject_post->post_type) {
+            // Get subject's class level
+            $subject_class_terms = wp_get_post_terms($filter_subject, 'class_level', ['fields' => 'ids']);
+            
+            // Get students with matching class level
+            $args = [
+                'post_type' => 'students',
+                'post_status' => 'publish',
+                'posts_per_page' => -1,
+                'orderby' => 'title',
+                'order' => 'ASC',
+                'tax_query' => [
+                    [
+                        'taxonomy' => 'class_level',
+                        'field' => 'term_id',
+                        'terms' => $exam_class_terms,
+                    ],
+                ],
+            ];
+            
+            $students = get_posts($args);
+        }
     }
 }
 ?>
@@ -175,8 +160,8 @@ if ($filter_exam > 0 && $filter_subject > 0) {
                         <option value="0"><?php echo esc_html__('— Select Subject —', 'result-spark-engine'); ?></option>
                         <?php if ($filter_exam > 0 && !empty($subjects)) : ?>
                             <?php foreach ($subjects as $subject) : ?>
-                                <option value="<?php echo esc_attr($subject->term_id); ?>" <?php selected($filter_subject, $subject->term_id); ?>>
-                                    <?php echo esc_html($subject->name); ?>
+                                <option value="<?php echo esc_attr($subject->ID); ?>" <?php selected($filter_subject, $subject->ID); ?>>
+                                    <?php echo esc_html($subject->post_title); ?>
                                 </option>
                             <?php endforeach; ?>
                         <?php endif; ?>
@@ -215,8 +200,8 @@ if ($filter_exam > 0 && $filter_subject > 0) {
                     <h2 style="margin: 0;">
                         <?php 
                         $exam_title = get_the_title($filter_exam);
-                        $subject_obj = get_term($filter_subject, 'subject');
-                        $subject_name = $subject_obj && !is_wp_error($subject_obj) ? $subject_obj->name : '';
+                        $subject_post = get_post($filter_subject);
+                        $subject_name = $subject_post ? $subject_post->post_title : '';
                         printf(
                             esc_html__('Enter Marks: %s - %s', 'result-spark-engine'),
                             esc_html($exam_title),

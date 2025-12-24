@@ -48,10 +48,8 @@ class Generator
         $this->register_taxonomy('section', 'students');
         $this->register_taxonomy('shift', 'students');
         
-        // Subject taxonomy - keep on students for mark entry, also add to subject post type
-        $this->register_taxonomy('subject', ['students', 'subject']);
-        
-        // Grade taxonomy - move to subject post type
+        // Subject and grade taxonomies - moved to subject post type only
+        $this->register_taxonomy('subject', 'subject');
         $this->register_taxonomy('grade', 'subject');
     }
 }
