@@ -18,7 +18,7 @@
 		},
 		"name": {
 			"type": "string",
-			"default": "spe-first-name"
+			"default": "spe-input-field"
 		},
 		"help": {
 			"type": "string",
