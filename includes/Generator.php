@@ -10,7 +10,7 @@ use Result_Spark_Engine\Traits\Post_Type_Taxonomy;
 
 /**
  * Generator class
- * 
+ *
  * @description: Easy way to register custom post types and taxonomies.
  * Just use the trait methods with the name and it will auto-generate everything.
  */
@@ -34,6 +34,7 @@ class Generator
         // Register students post type
         $this->register_post_type('students');
         $this->register_post_type('exam');
+        $this->register_post_type('form_builder');
 
         // Register taxonomies for students
         $this->register_taxonomy('class_level', ['students', 'exam']);
