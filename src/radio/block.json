@@ -1,0 +1,44 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "form-builder/input-radio",
+	"version": "0.1.0",
+	"title": "Radio",
+	"category": "widgets",
+	"icon": "smiley",
+	"description": "Example block scaffolded with Create Block tool.",
+	"example": {},
+	"supports": {
+		"html": false
+	},
+	"attributes": {
+		"name": {
+			"type": "string",
+			"default": "spe-radio-field"
+		},
+		"label": {
+			"type": "string",
+			"default": "Radio Label"
+		},
+		"required": {
+			"type": "boolean",
+			"default": false
+		},
+		"options": {
+			"type": "array",
+			"default": [
+				{ "label": "Option 1", "value": "option_1" },
+				{ "label": "Option 2", "value": "option_2" }
+			]
+		},
+		"defaultValue": {
+			"type": "string",
+			"default": "option_1"
+		}
+	},
+	"textdomain": "result-spark-engine",
+	"editorScript": "file:./index.js",
+	"editorStyle": "file:./index.css",
+	"style": "file:./style-index.css",
+	"viewScript": "file:./view.js"
+}

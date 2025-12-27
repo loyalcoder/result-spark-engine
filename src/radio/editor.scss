@@ -1,0 +1,25 @@
+.radio-input {
+  margin-bottom: 16px;
+
+  label {
+    display: block;
+    margin-bottom: 6px;
+    cursor: pointer;
+  }
+
+  .required {
+    color: red;
+    margin-left: 4px;
+  }
+}
+
+.radio-input-block {
+  border: 1px dashed #ccc;
+  padding: 12px;
+}
+
+.radio-option {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
