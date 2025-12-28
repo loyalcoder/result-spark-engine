@@ -93,7 +93,10 @@ class Assets
     public function register_admin_assets($hook)
     {
         // Enqueue mark entry assets
-        if ('rse_page_rse-mark-entry' === $hook) {
+        // WordPress generates hook as: {parent_slug}_page_{submenu_slug}
+        // For parent 'rse-dashboard' and submenu 'rse-mark-entry', it should be 'rse-dashboard_page_rse-mark-entry'
+        if ('rse-dashboard_page_rse-mark-entry' === $hook || 
+            (isset($_GET['page']) && $_GET['page'] === 'rse-mark-entry')) {
             wp_enqueue_style(
                 'rse-mark-entry',
                 RSE_ASSETS . '/css/mark-entry.css',
@@ -115,6 +118,7 @@ class Assets
                     'ajax_url' => admin_url('admin-ajax.php'),
                     'nonce' => wp_create_nonce('rse_dashboard_nonce'),
                     'loading_text' => esc_html__('Loading...', 'result-spark-engine'),
+                    'select_required_text' => esc_html__('Please select exam and subject.', 'result-spark-engine'),
                 ]
             );
         }

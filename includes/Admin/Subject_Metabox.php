@@ -53,6 +53,7 @@ class Subject_Metabox
         $total_mark = get_post_meta($post->ID, '_rse_total_mark', true);
         $mark_breakdown = get_post_meta($post->ID, '_rse_mark_breakdown', true);
         $pass_mark = get_post_meta($post->ID, '_rse_pass_mark', true);
+        $compulsory_subject = get_post_meta($post->ID, '_rse_compulsory_subject', true);
 
         if (!is_array($mark_breakdown)) {
             $mark_breakdown = [];
@@ -196,6 +197,25 @@ class Subject_Metabox
                     <p class="description"><?php echo esc_html__('If checked, students must achieve the overall pass mark to pass this subject.', 'result-spark-engine'); ?></p>
                 </td>
             </tr>
+
+            <tr>
+                <th scope="row">
+                    <label for="rse_compulsory_subject"><?php echo esc_html__('Compulsory Subjects', 'result-spark-engine'); ?></label>
+                </th>
+                <td>
+                    <label>
+                        <input 
+                            type="checkbox" 
+                            id="rse_compulsory_subject" 
+                            name="rse_compulsory_subject" 
+                            value="1" 
+                            <?php checked($compulsory_subject, '1'); ?>
+                        />
+                        <?php echo esc_html__('This is a compulsory subject', 'result-spark-engine'); ?>
+                    </label>
+                    <p class="description"><?php echo esc_html__('If checked, this subject is marked as compulsory for students.', 'result-spark-engine'); ?></p>
+                </td>
+            </tr>
         </table>
         <?php
     }
@@ -284,6 +304,13 @@ class Subject_Metabox
             update_post_meta($post_id, '_rse_pass_mark', '1');
         } else {
             delete_post_meta($post_id, '_rse_pass_mark');
+        }
+
+        // Save compulsory subject checkbox
+        if (isset($_POST['rse_compulsory_subject'])) {
+            update_post_meta($post_id, '_rse_compulsory_subject', '1');
+        } else {
+            delete_post_meta($post_id, '_rse_compulsory_subject');
         }
     }
 

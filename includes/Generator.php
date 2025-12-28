@@ -42,15 +42,15 @@ class Generator
         $this->register_post_type('form_builder');
 
         // Register taxonomies for students
-        $this->register_taxonomy('class_level', ['students', 'exam']);
+        $this->register_taxonomy('class_level', ['students', 'exam', 'subject']);
         $this->register_taxonomy('session', ['students', 'exam']);
         $this->register_taxonomy('academic_year', ['students', 'exam']);
-        $this->register_taxonomy('department', 'students');
+        $this->register_taxonomy('department', ['students', 'subject']);
         $this->register_taxonomy('section', 'students');
         $this->register_taxonomy('shift', 'students');
         
-        // Subject and grade taxonomies - moved to subject post type only
-        $this->register_taxonomy('subject', 'subject');
+        // Taxonomies for subject post type
         $this->register_taxonomy('grade', 'subject');
+        $this->register_taxonomy('optional_subject', 'subject');
     }
 }
