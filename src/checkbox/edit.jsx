@@ -132,7 +132,7 @@ export default function Edit({ attributes, setAttributes }) {
 					{options.map((option, index) => (
 						<div key={index} className="spark-engine-form-check">
 							<input
-								type="radio"
+								type="checkbox"
 								name={name}
 								id={`${id}-${index}-${name}`}
 								value={option.value}

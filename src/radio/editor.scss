@@ -1,25 +1,44 @@
-.radio-input {
-  margin-bottom: 16px;
-
-  label {
-    display: block;
-    margin-bottom: 6px;
-    cursor: pointer;
-  }
-
-  .required {
-    color: red;
-    margin-left: 4px;
-  }
+.spark-engine-check-input-wrapper {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
 }
 
-.radio-input-block {
-  border: 1px dashed #ccc;
-  padding: 12px;
-}
+.spark-engine-form-check {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	.spe-radio-filed {
+		&[type="radio"] {
+			--spe-form-check-bg-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='2' fill='%23fff'/%3e%3c/svg%3e");
+			border-radius: 50%;
+		}
+		&[type="checkbox"] {
+			--spe-form-check-bg-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='m6 10 3 3 6-6'/%3e%3c/svg%3e");
+			border-radius: .25em;
+		}
 
-.radio-option {
-  display: flex;
-  gap: 8px;
-  align-items: center;
+		--spe-border-width: 1px;
+		--spe-border-color: #dee2e6;
+		flex-shrink: 0;
+		width: 1rem;
+		height: 1rem;
+		-webkit-appearance: none;
+		-moz-appearance: none;
+		appearance: none;
+		background-image: var(--spe-form-check-bg-image);
+		background-repeat: no-repeat;
+		background-position: center;
+		background-size: contain;
+		border: var(--spe-border-width) solid var(--spe-border-color);
+		-webkit-print-color-adjust: exact;
+		color-adjust: exact;
+		print-color-adjust: exact;
+		margin: 0;
+
+		&:checked {
+			background-color: #333;
+			border-color: #333;
+		}
+	}
 }

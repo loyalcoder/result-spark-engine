@@ -1,9 +1,9 @@
 {
 	"$schema": "https://schemas.wp.org/trunk/block.json",
 	"apiVersion": 3,
-	"name": "form-builder/input-radio",
+	"name": "form-builder/input-checkbox",
 	"version": "0.1.0",
-	"title": "Radio",
+	"title": "Checkbox",
 	"category": "widgets",
 	"icon": "smiley",
 	"description": "Example block scaffolded with Create Block tool.",
@@ -14,7 +14,7 @@
 	"attributes": {
 		"name": {
 			"type": "string",
-			"default": "spe-radio-field"
+			"default": "spe-checkbox-field"
 		},
 		"showLabel": {
 			"type": "boolean",
@@ -22,7 +22,7 @@
 		},
 		"label": {
 			"type": "string",
-			"default": "Radio"
+			"default": "Checkbox"
 		},
 		"isRequired": {
 			"type": "boolean",
