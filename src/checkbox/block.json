@@ -38,6 +38,18 @@
 		"defaultValue": {
 			"type": "string",
 			"default": "option_1"
+		},
+		"useTaxonomy": {
+			"type": "boolean",
+			"default": false
+		},
+		"postType": {
+			"type": "string",
+			"default": ""
+		},
+		"taxonomy": {
+			"type": "string",
+			"default": ""
 		}
 	},
 	"textdomain": "result-spark-engine",

@@ -1,22 +1,31 @@
-import {
-	InspectorControls,
-	RichText,
-	useBlockProps,
-} from "@wordpress/block-editor";
+import { InspectorControls, useBlockProps } from "@wordpress/block-editor";
 import {
 	PanelBody,
 	TextControl,
 	Button,
 	IconButton,
 	ToggleControl,
+	SelectControl,
 } from "@wordpress/components";
 import { plus, trash } from "@wordpress/icons";
 import { v4 as uuidv4 } from "uuid";
+import { useSelect } from "@wordpress/data";
+import { store as coreStore } from "@wordpress/core-data";
+import { Fragment } from "react/jsx-runtime";
 import "./editor.scss";
 
 export default function Edit({ attributes, setAttributes }) {
-	const { label, options, name, isRequired, showLabel, defaultValue } =
-		attributes;
+	const {
+		label,
+		options,
+		name,
+		isRequired,
+		showLabel,
+		defaultValue,
+		useTaxonomy,
+		postType,
+		taxonomy,
+	} = attributes;
 	const blockProps = useBlockProps();
 	const id = uuidv4();
 
@@ -39,6 +48,19 @@ export default function Edit({ attributes, setAttributes }) {
 		});
 	};
 
+	const terms = useSelect(
+		(select) =>
+			select(coreStore).getEntityRecords("taxonomy", taxonomy, {
+				per_page: -1,
+			}),
+		[taxonomy],
+	);
+
+	const taxonomies = useSelect(
+		(select) => select(coreStore).getTaxonomies({ type: postType }),
+		[postType],
+	);
+
 	return (
 		<div {...blockProps}>
 			<InspectorControls>
@@ -56,6 +78,12 @@ export default function Edit({ attributes, setAttributes }) {
 					/>
 
 					<ToggleControl
+						label="Use Taxonomy"
+						checked={useTaxonomy}
+						onChange={(value) => setAttributes({ useTaxonomy: value })}
+					/>
+
+					<ToggleControl
 						label="Show Label"
 						checked={showLabel}
 						onChange={(value) => setAttributes({ showLabel: value })}
@@ -67,53 +95,83 @@ export default function Edit({ attributes, setAttributes }) {
 						onChange={(value) => setAttributes({ isRequired: value })}
 					/>
 
-					<TextControl
-						label="Default Value"
-						value={defaultValue}
-						onChange={(value) => setAttributes({ defaultValue: value })}
-					/>
+					{!useTaxonomy ? (
+						<TextControl
+							label="Default Value"
+							value={defaultValue}
+							onChange={(value) => setAttributes({ defaultValue: value })}
+						/>
+					) : (
+						<Fragment>
+							<SelectControl
+								__next40pxDefaultSize
+								__nextHasNoMarginBottom
+								label="Post Types"
+								value={postType}
+								options={[
+									{ label: "Students", value: "students" },
+									{ label: "Exam", value: "exam" },
+								]}
+								onChange={(postType) => setAttributes({ postType })}
+							/>
+							<SelectControl
+								__next40pxDefaultSize
+								__nextHasNoMarginBottom
+								label="Taxonomies"
+								value={taxonomy}
+								options={taxonomies?.map((tax) => {
+									return { label: tax.name, value: tax.slug };
+								})}
+								onChange={(taxonomy) => setAttributes({ taxonomy })}
+							/>
+						</Fragment>
+					)}
 				</PanelBody>
 			</InspectorControls>
-			<InspectorControls>
-				<PanelBody title="Radio Options" initialOpen>
-					{options.map((option, index) => (
-						<div
-							key={index}
-							style={{
-								borderBottom: "1px solid #ddd",
-								paddingBottom: 8,
-								marginBottom: 8,
-							}}
-						>
-							<TextControl
-								label={`Label`}
-								value={option.label}
-								onChange={(value) => updateOption(index, "label", value)}
-							/>
+			{!useTaxonomy ? (
+				<InspectorControls>
+					<PanelBody title="Radio Options" initialOpen>
+						{options.map((option, index) => (
+							<div
+								key={index}
+								style={{
+									borderBottom: "1px solid #ddd",
+									paddingBottom: 8,
+									marginBottom: 8,
+								}}
+							>
+								<TextControl
+									label={`Label`}
+									value={option.label}
+									onChange={(value) => updateOption(index, "label", value)}
+								/>
 
-							<TextControl
-								label={`Value`}
-								value={option.value}
-								onChange={(value) => updateOption(index, "value", value)}
-							/>
+								<TextControl
+									label={`Value`}
+									value={option.value}
+									onChange={(value) => updateOption(index, "value", value)}
+								/>
 
-							<IconButton
-								icon={trash}
-								label="Remove option"
-								onClick={() =>
-									confirm("Are you sure you want to remove this option?") &&
-									removeOption(index)
-								}
-								isDestructive
-							/>
-						</div>
-					))}
+								<IconButton
+									icon={trash}
+									label="Remove option"
+									onClick={() =>
+										confirm("Are you sure you want to remove this option?") &&
+										removeOption(index)
+									}
+									isDestructive
+								/>
+							</div>
+						))}
 
-					<Button variant="primary" icon={plus} onClick={addOption}>
-						Add Option
-					</Button>
-				</PanelBody>
-			</InspectorControls>
+						<Button variant="primary" icon={plus} onClick={addOption}>
+							Add Option
+						</Button>
+					</PanelBody>
+				</InspectorControls>
+			) : (
+				""
+			)}
 
 			<div className="spark-engine-input-wrapper-block">
 				{showLabel && label ? (
@@ -129,25 +187,52 @@ export default function Edit({ attributes, setAttributes }) {
 					""
 				)}
 				<div className={`spark-engine-check-input-wrapper`}>
-					{options.map((option, index) => (
-						<div key={index} className="spark-engine-form-check">
-							<input
-								type="checkbox"
-								name={name}
-								id={`${id}-${index}-${name}`}
-								value={option.value}
-								defaultChecked={defaultValue === option.value}
-								required={isRequired}
-								className="spe-radio-filed"
-							/>
-							<label
-								className="spark-engine-input-label"
-								htmlFor={`${id}-${index}-${name}`}
-							>
-								{option.label}
-							</label>
-						</div>
-					))}
+					{!useTaxonomy ? (
+						options?.length > 0 ? (
+							options?.map((option, index) => (
+								<div key={index} className="spark-engine-form-check">
+									<input
+										type="checkbox"
+										name={name}
+										id={`${id}-${index}-${name}`}
+										value={option?.value}
+										defaultChecked={defaultValue === option?.value}
+										required={isRequired}
+										className="spe-radio-filed"
+									/>
+									<label
+										className="spark-engine-input-label"
+										htmlFor={`${id}-${index}-${name}`}
+									>
+										{option?.label}
+									</label>
+								</div>
+							))
+						) : (
+							<div className="spe-not-found">No Data Found</div>
+						)
+					) : terms?.length > 0 ? (
+						terms?.map((term, index) => (
+							<div key={index} className="spark-engine-form-check">
+								<input
+									type="checkbox"
+									name={name}
+									id={`${id}-${index}-${name}`}
+									value={term?.slug}
+									required={isRequired}
+									className="spe-radio-filed"
+								/>
+								<label
+									className="spark-engine-input-label"
+									htmlFor={`${id}-${index}-${name}`}
+								>
+									{term?.name}
+								</label>
+							</div>
+						))
+					) : (
+						<div className="spe-not-found">No Data Found</div>
+					)}
 				</div>
 			</div>
 		</div>

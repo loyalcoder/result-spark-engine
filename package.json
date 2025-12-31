@@ -18,6 +18,7 @@
 		"@wordpress/scripts": "^31.1.0"
 	},
 	"dependencies": {
+		"@wordpress/data": "^10.37.0",
 		"@wordpress/icons": "^11.4.0",
 		"@wordpress/interactivity": "^6.36.0",
 		"lucide-react": "^0.561.0",
