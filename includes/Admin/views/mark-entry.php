@@ -107,9 +107,22 @@ $exams = get_posts([
                 <input type="hidden" name="subject_id" id="rse-form-subject-id" value="">
                 
                 <div style="padding: 20px; border-bottom: 1px solid #ddd; background: #f9f9f9;">
-                    <h2 style="margin: 0; font-size: 18px; color: #23282d;" id="rse-form-title">
-                        <?php echo esc_html__('Enter Marks', 'result-spark-engine'); ?>
-                    </h2>
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                        <h2 style="margin: 0; font-size: 18px; color: #23282d;" id="rse-form-title">
+                            <?php echo esc_html__('Enter Marks', 'result-spark-engine'); ?>
+                        </h2>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <input 
+                                type="text" 
+                                id="rse-student-search" 
+                                placeholder="<?php echo esc_attr__('Search by name or roll number...', 'result-spark-engine'); ?>" 
+                                style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 3px; font-size: 14px; min-width: 250px;"
+                            />
+                            <button type="button" class="button" id="rse-clear-search" style="padding: 8px 12px; font-size: 13px; display: none;">
+                                <?php echo esc_html__('Clear', 'result-spark-engine'); ?>
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 <div id="rse-students-table-container" style="padding: 20px;">
@@ -129,9 +142,36 @@ $exams = get_posts([
         </div>
     </div>
 
+    <!-- Subject Status List -->
+    <div id="rse-subjects-status-container" style="display: none; margin-top: 20px;">
+        <div class="rse-subjects-status" style="background: #fff; border: 1px solid #ccd0d4; box-shadow: 0 1px 1px rgba(0,0,0,.04); border-radius: 4px; overflow: hidden;">
+            <div style="padding: 20px; border-bottom: 1px solid #ddd; background: #f9f9f9; display: flex; justify-content: space-between; align-items: center;">
+                <h2 style="margin: 0; font-size: 18px; color: #23282d;">
+                    <?php echo esc_html__('Subject Mark Entry Status', 'result-spark-engine'); ?>
+                </h2>
+                <button type="button" class="button" id="rse-refresh-subjects-status" style="padding: 6px 12px; font-size: 13px;">
+                    <?php echo esc_html__('Refresh', 'result-spark-engine'); ?>
+                </button>
+            </div>
+            
+            <div id="rse-subjects-status-content" style="padding: 20px;">
+                <!-- Subject list will be loaded here -->
+            </div>
+            
+            <div id="rse-generate-result-container" style="padding: 20px; border-top: 1px solid #ddd; background: #f0f8ff; text-align: center; display: none;">
+                <p style="margin: 0 0 15px 0; font-size: 14px; color: #0073aa; font-weight: 600;">
+                    <?php echo esc_html__('All subjects have been marked! You can now generate results.', 'result-spark-engine'); ?>
+                </p>
+                <button type="button" class="button button-primary button-large" id="rse-generate-result-btn" style="padding: 12px 30px; font-size: 16px;">
+                    <?php echo esc_html__('Generate Result', 'result-spark-engine'); ?>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- No Data Message -->
     <div id="rse-no-data-message" class="notice notice-info" style="margin: 20px 0; padding: 12px; border-left: 4px solid #00a0d2; background: #fff; box-shadow: 0 1px 1px rgba(0,0,0,.04);">
-        <p style="margin: 0; font-size: 14px;"><?php echo esc_html__('Please select an exam, subject type, and subject to load students for mark entry.', 'result-spark-engine'); ?></p>
+        <p style="margin: 0; font-size: 14px;"><?php echo esc_html__('Please select an exam to view subject status and start mark entry.', 'result-spark-engine'); ?></p>
     </div>
 </div>
 
