@@ -150,8 +150,8 @@ class RSE_Ajax
             ]);
         }
 
-        // Get compulsory subjects (with _rse_compulsory_subject = '1') from exam's class
-        // NO department taxonomy involved
+        // Get compulsory subjects = subjects that do NOT have department taxonomy
+        // Compulsory = No department taxonomy
         $subject_posts = get_posts([
             'post_type' => 'subject',
             'post_status' => 'publish',
@@ -164,12 +164,9 @@ class RSE_Ajax
                     'field' => 'term_id',
                     'terms' => $exam_class_terms,
                 ],
-            ],
-            'meta_query' => [
                 [
-                    'key' => '_rse_compulsory_subject',
-                    'value' => '1',
-                    'compare' => '=',
+                    'taxonomy' => 'department',
+                    'operator' => 'NOT EXISTS', // Compulsory = no department taxonomy
                 ],
             ],
         ]);
@@ -195,7 +192,7 @@ class RSE_Ajax
     }
 
     /**
-     * Get departments for exam
+     * Get departments for exam (from subjects, not students)
      *
      * @return void
      */
@@ -227,24 +224,33 @@ class RSE_Ajax
             ]);
         }
 
-        // Get departments from students in this class
-        $students = get_posts([
-            'post_type' => 'students',
+        // Get departments from subjects (post_type=subject) that have department taxonomy
+        // Departmental subjects = subjects that have the 'department' taxonomy assigned
+        $subjects = get_posts([
+            'post_type' => 'subject',
             'post_status' => 'publish',
             'posts_per_page' => -1,
             'tax_query' => [
+                'relation' => 'AND',
                 [
                     'taxonomy' => 'class_level',
                     'field' => 'term_id',
                     'terms' => $exam_class_terms,
                 ],
+                [
+                    'taxonomy' => 'department',
+                    'operator' => 'EXISTS', // Only get subjects that have department taxonomy
+                ],
             ],
         ]);
 
         $department_ids = [];
-        foreach ($students as $student) {
-            $student_depts = wp_get_post_terms($student->ID, 'department', ['fields' => 'ids']);
-            $department_ids = array_merge($department_ids, $student_depts);
+        foreach ($subjects as $subject) {
+            // Get department taxonomy terms for this subject
+            $subject_depts = wp_get_post_terms($subject->ID, 'department', ['fields' => 'ids']);
+            if (!is_wp_error($subject_depts) && !empty($subject_depts)) {
+                $department_ids = array_merge($department_ids, $subject_depts);
+            }
         }
 
         $department_ids = array_unique($department_ids);
@@ -259,6 +265,11 @@ class RSE_Ajax
                 ];
             }
         }
+
+        // Sort departments alphabetically by name
+        usort($departments_data, function($a, $b) {
+            return strcmp($a['name'], $b['name']);
+        });
 
         wp_send_json_success([
             'departments' => $departments_data,
@@ -299,8 +310,10 @@ class RSE_Ajax
             ]);
         }
 
-        // Get subjects with this class level and department
-        // Also include subjects that might not have department taxonomy but are associated with students in this department
+        // Get subjects (post_type=subject) that have:
+        // 1. The exam's class level
+        // 2. The selected department taxonomy
+        // Departmental subjects = subjects that have the 'department' taxonomy
         $subject_posts = get_posts([
             'post_type' => 'subject',
             'post_status' => 'publish',
@@ -321,31 +334,6 @@ class RSE_Ajax
                 ],
             ],
         ]);
-
-        // If no subjects found with department taxonomy, try to get subjects that are NOT compulsory
-        // and might be used by students in this department
-        if (empty($subject_posts)) {
-            $subject_posts = get_posts([
-                'post_type' => 'subject',
-                'post_status' => 'publish',
-                'posts_per_page' => -1,
-                'orderby' => 'title',
-                'order' => 'ASC',
-                'tax_query' => [
-                    [
-                        'taxonomy' => 'class_level',
-                        'field' => 'term_id',
-                        'terms' => $exam_class_terms,
-                    ],
-                ],
-                'meta_query' => [
-                    [
-                        'key' => '_rse_compulsory_subject',
-                        'compare' => 'NOT EXISTS',
-                    ],
-                ],
-            ]);
-        }
 
         $subjects_data = [];
         foreach ($subject_posts as $subject) {
@@ -389,9 +377,9 @@ class RSE_Ajax
         $per_page = isset($_POST['per_page']) ? absint($_POST['per_page']) : 20;
         $search = isset($_POST['search']) ? sanitize_text_field($_POST['search']) : '';
 
-        if ($exam_id <= 0) {
+        if ($exam_id <= 0 || $subject_id <= 0) {
             wp_send_json_error([
-                'message' => esc_html__('Invalid exam ID.', 'result-spark-engine'),
+                'message' => esc_html__('Invalid exam or subject ID.', 'result-spark-engine'),
             ]);
         }
 
@@ -405,6 +393,16 @@ class RSE_Ajax
                 'pages' => 0,
                 'current_page' => 1,
             ]);
+        }
+
+        // Check if subject is compulsory = does NOT have department taxonomy
+        $subject_depts = wp_get_post_terms($subject_id, 'department', ['fields' => 'ids']);
+        $is_compulsory = (is_wp_error($subject_depts) || empty($subject_depts));
+        
+        // Get department from subject if it's a departmental subject
+        $subject_departments = [];
+        if (!$is_compulsory && !empty($subject_depts)) {
+            $subject_departments = $subject_depts;
         }
 
         // Build query args
@@ -424,15 +422,31 @@ class RSE_Ajax
             ],
         ];
 
-        // Add department filter if provided
-        if ($department_id > 0) {
-            $args['tax_query'][] = [
-                'taxonomy' => 'department',
-                'field' => 'term_id',
-                'terms' => $department_id,
-            ];
-            $args['tax_query']['relation'] = 'AND';
+        // Add department filter for departmental subjects
+        // Priority: Use department from subject, then from department_id parameter
+        if (!$is_compulsory) {
+            $dept_to_filter = [];
+            
+            // First, try to get department from the subject itself
+            if (!empty($subject_departments)) {
+                $dept_to_filter = $subject_departments;
+            } 
+            // Fallback to department_id parameter if provided
+            elseif ($department_id > 0) {
+                $dept_to_filter = [$department_id];
+            }
+            
+            // Apply department filter if we have departments to filter by
+            if (!empty($dept_to_filter)) {
+                $args['tax_query'][] = [
+                    'taxonomy' => 'department',
+                    'field' => 'term_id',
+                    'terms' => $dept_to_filter,
+                ];
+                $args['tax_query']['relation'] = 'AND';
+            }
         }
+        // For compulsory subjects, don't filter by department - show all students in the class
 
         // Add search filter if provided
         if (!empty($search)) {
@@ -696,8 +710,8 @@ class RSE_Ajax
         global $wpdb;
         $table_name = $wpdb->prefix . 'rse_mark_entry';
 
-        // Get all students in this exam's class
-        $students = get_posts([
+        // Get all students in this exam's class (for compulsory subjects)
+        $all_class_students = get_posts([
             'post_type' => 'students',
             'post_status' => 'publish',
             'posts_per_page' => -1,
@@ -711,8 +725,7 @@ class RSE_Ajax
             ],
         ]);
 
-        $total_students = count($students);
-        $student_ids = $students;
+        $total_class_students = count($all_class_students);
 
         // Get ALL subjects for this exam's class level (not just compulsory or departmental)
         // This ensures we don't miss any subjects
@@ -745,30 +758,64 @@ class RSE_Ajax
         $all_done = true;
 
         // Check if table exists
-        if ($wpdb->get_var("SHOW TABLES LIKE '$table_name'") == $table_name && !empty($student_ids)) {
+        if ($wpdb->get_var("SHOW TABLES LIKE '$table_name'") == $table_name) {
             foreach ($unique_subjects as $subject) {
-                // Count how many students have marks for this subject
-                // A subject is considered "marked" if breakdown_marks exists and is not empty/null
-                $placeholders = implode(',', array_fill(0, count($student_ids), '%d'));
-                $marked_count = $wpdb->get_var($wpdb->prepare(
-                    "SELECT COUNT(DISTINCT student_id) 
-                     FROM {$table_name} 
-                     WHERE student_id IN ($placeholders) AND exam_id = %d AND subject_id = %d 
-                     AND breakdown_marks IS NOT NULL 
-                     AND breakdown_marks != '' 
-                     AND breakdown_marks != 'null'
-                     AND breakdown_marks != '[]'
-                     AND LENGTH(breakdown_marks) > 2",
-                    array_merge($student_ids, [$exam_id, $subject->ID])
-                ));
-
-                $is_compulsory = get_post_meta($subject->ID, '_rse_compulsory_subject', true) === '1';
+                // Determine subject type based on department taxonomy
+                // Compulsory = NO department taxonomy
+                // Departmental = HAS department taxonomy
                 $subject_depts = wp_get_post_terms($subject->ID, 'department', ['fields' => 'names']);
-                $department_name = !empty($subject_depts) ? implode(', ', $subject_depts) : '';
+                $subject_dept_ids = wp_get_post_terms($subject->ID, 'department', ['fields' => 'ids']);
+                $has_department = !is_wp_error($subject_depts) && !is_wp_error($subject_dept_ids) && !empty($subject_depts);
                 
-                // Determine subject type: If it has department taxonomy, it's departmental (even if also compulsory)
-                // Otherwise, if it's marked as compulsory, it's compulsory
-                $subject_type = !empty($subject_depts) ? 'departmental' : ($is_compulsory ? 'compulsory' : 'departmental');
+                $department_name = $has_department ? implode(', ', $subject_depts) : '';
+                $subject_type = $has_department ? 'departmental' : 'compulsory';
+
+                // Get students based on subject type
+                if ($has_department) {
+                    // For departmental subjects: get students with the same department
+                    $subject_students = get_posts([
+                        'post_type' => 'students',
+                        'post_status' => 'publish',
+                        'posts_per_page' => -1,
+                        'fields' => 'ids',
+                        'tax_query' => [
+                            'relation' => 'AND',
+                            [
+                                'taxonomy' => 'class_level',
+                                'field' => 'term_id',
+                                'terms' => $exam_class_terms,
+                            ],
+                            [
+                                'taxonomy' => 'department',
+                                'field' => 'term_id',
+                                'terms' => $subject_dept_ids,
+                            ],
+                        ],
+                    ]);
+                    $total_students = count($subject_students);
+                    $student_ids = $subject_students;
+                } else {
+                    // For compulsory subjects: get all students in the class
+                    $total_students = $total_class_students;
+                    $student_ids = $all_class_students;
+                }
+
+                // Count how many students have marks for this subject
+                $marked_count = 0;
+                if (!empty($student_ids)) {
+                    $placeholders = implode(',', array_fill(0, count($student_ids), '%d'));
+                    $marked_count = $wpdb->get_var($wpdb->prepare(
+                        "SELECT COUNT(DISTINCT student_id) 
+                         FROM {$table_name} 
+                         WHERE student_id IN ($placeholders) AND exam_id = %d AND subject_id = %d 
+                         AND breakdown_marks IS NOT NULL 
+                         AND breakdown_marks != '' 
+                         AND breakdown_marks != 'null'
+                         AND breakdown_marks != '[]'
+                         AND LENGTH(breakdown_marks) > 2",
+                        array_merge($student_ids, [$exam_id, $subject->ID])
+                    ));
+                }
 
                 $is_done = ($marked_count >= $total_students && $total_students > 0);
                 if (!$is_done) {
@@ -789,13 +836,43 @@ class RSE_Ajax
         } else {
             // If no table or no students, mark all as not done
             foreach ($unique_subjects as $subject) {
-                $is_compulsory = get_post_meta($subject->ID, '_rse_compulsory_subject', true) === '1';
+                // Determine subject type based on department taxonomy
+                // Compulsory = NO department taxonomy
+                // Departmental = HAS department taxonomy
                 $subject_depts = wp_get_post_terms($subject->ID, 'department', ['fields' => 'names']);
-                $department_name = !empty($subject_depts) ? implode(', ', $subject_depts) : '';
+                $subject_dept_ids = wp_get_post_terms($subject->ID, 'department', ['fields' => 'ids']);
+                $has_department = !is_wp_error($subject_depts) && !is_wp_error($subject_dept_ids) && !empty($subject_depts);
                 
-                // Determine subject type: If it has department taxonomy, it's departmental (even if also compulsory)
-                // Otherwise, if it's marked as compulsory, it's compulsory
-                $subject_type = !empty($subject_depts) ? 'departmental' : ($is_compulsory ? 'compulsory' : 'departmental');
+                $department_name = $has_department ? implode(', ', $subject_depts) : '';
+                $subject_type = $has_department ? 'departmental' : 'compulsory';
+
+                // Get students based on subject type
+                if ($has_department) {
+                    // For departmental subjects: get students with the same department
+                    $subject_students = get_posts([
+                        'post_type' => 'students',
+                        'post_status' => 'publish',
+                        'posts_per_page' => -1,
+                        'fields' => 'ids',
+                        'tax_query' => [
+                            'relation' => 'AND',
+                            [
+                                'taxonomy' => 'class_level',
+                                'field' => 'term_id',
+                                'terms' => $exam_class_terms,
+                            ],
+                            [
+                                'taxonomy' => 'department',
+                                'field' => 'term_id',
+                                'terms' => $subject_dept_ids,
+                            ],
+                        ],
+                    ]);
+                    $total_students = count($subject_students);
+                } else {
+                    // For compulsory subjects: get all students in the class
+                    $total_students = $total_class_students;
+                }
 
                 $subjects_status[] = [
                     'id' => $subject->ID,
