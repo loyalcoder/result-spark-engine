@@ -15,7 +15,8 @@
 		"core/navigation-link",
 		"core/social-links",
 		"core/page-list",
-		"core/spacer"
+		"core/spacer",
+		"core/buttons"
 	],
 	"example": {},
 	"supports": {
