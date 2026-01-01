@@ -82,6 +82,27 @@ class Installer
         
         // Migrate: Remove total_mark column if it exists (for existing installations)
         $this->migrate_remove_total_mark();
+
+        // Create result table
+        $result_scheme = "CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}rse_result` (
+            `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+            `student_id` bigint(20) unsigned NOT NULL,
+            `roll` varchar(50) DEFAULT NULL,
+            `total_mark` decimal(10,2) DEFAULT 0.00,
+            `grade_point` decimal(5,2) DEFAULT 0.00,
+            `exam_id` bigint(20) unsigned NOT NULL,
+            `grade` varchar(10) DEFAULT NULL,
+            `mark_in_details` longtext DEFAULT NULL COMMENT 'JSON encoded subject-wise marks',
+            `created_at` datetime NOT NULL,
+            `updated_at` datetime NOT NULL,
+            PRIMARY KEY (`id`),
+            UNIQUE KEY `unique_result` (`student_id`, `exam_id`),
+            KEY `student_id` (`student_id`),
+            KEY `exam_id` (`exam_id`),
+            KEY `roll` (`roll`)
+          ) $charset_collate";
+
+        dbDelta($result_scheme);
     }
     
     /**
