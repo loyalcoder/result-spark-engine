@@ -34,6 +34,7 @@ class RSE_Ajax
         add_action('wp_ajax_rse_get_students_for_mark_entry', [$this, 'get_students_for_mark_entry']);
         add_action('wp_ajax_rse_save_marks', [$this, 'save_marks']);
         add_action('wp_ajax_rse_get_subjects_status', [$this, 'get_subjects_status']);
+        add_action('wp_ajax_rse_get_subjects_for_student', [$this, 'get_subjects_for_student']);
     }
 
     /**
@@ -930,5 +931,91 @@ class RSE_Ajax
             $search_like
         );
         return $where;
+    }
+
+    /**
+     * Get subjects for student based on class and department
+     *
+     * @return void
+     */
+    public function get_subjects_for_student()
+    {
+        check_ajax_referer('rse_dashboard_nonce', 'nonce');
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error([
+                'message' => esc_html__('You do not have permission to perform this action.', 'result-spark-engine'),
+            ]);
+        }
+
+        $class_id = isset($_POST['class_id']) ? absint($_POST['class_id']) : 0;
+        $department_id = isset($_POST['department_id']) ? absint($_POST['department_id']) : 0;
+
+        if ($class_id <= 0) {
+            wp_send_json_success([
+                'subjects' => [],
+                'message' => esc_html__('Please assign a class to the student first.', 'result-spark-engine'),
+            ]);
+        }
+
+        // Get all subjects for this class
+        $all_subjects = get_posts([
+            'post_type' => 'subject',
+            'post_status' => 'publish',
+            'posts_per_page' => -1,
+            'orderby' => 'title',
+            'order' => 'ASC',
+            'tax_query' => [
+                [
+                    'taxonomy' => 'class_level',
+                    'field' => 'term_id',
+                    'terms' => $class_id,
+                ],
+            ],
+        ]);
+
+        // Filter subjects based on department
+        // Compulsory = no department taxonomy
+        // Departmental = has department taxonomy matching student's department
+        $subjects = [];
+        foreach ($all_subjects as $subject) {
+            $subject_depts = wp_get_post_terms($subject->ID, 'department', ['fields' => 'ids']);
+            $has_department = !is_wp_error($subject_depts) && !empty($subject_depts);
+
+            if ($department_id > 0) {
+                // Include both compulsory (no dept) and departmental (matching dept)
+                if (!$has_department) {
+                    // Compulsory subject
+                    $subjects[] = $subject;
+                } elseif (in_array($department_id, $subject_depts)) {
+                    // Departmental subject matching student's department
+                    $subjects[] = $subject;
+                }
+            } else {
+                // No department assigned to student - only show compulsory subjects
+                if (!$has_department) {
+                    $subjects[] = $subject;
+                }
+            }
+        }
+
+        $subjects_data = [];
+        foreach ($subjects as $subject) {
+            $subject_depts = wp_get_post_terms($subject->ID, 'department', ['fields' => 'ids']);
+            $has_department = !is_wp_error($subject_depts) && !empty($subject_depts);
+            $subject_type = $has_department ? 'Departmental' : 'Compulsory';
+            $subject_type_class = $has_department ? 'departmental' : 'compulsory';
+            
+            $subjects_data[] = [
+                'id' => $subject->ID,
+                'name' => $subject->post_title,
+                'type' => $subject_type,
+                'type_class' => $subject_type_class,
+            ];
+        }
+
+        wp_send_json_success([
+            'subjects' => $subjects_data,
+        ]);
     }
 }
