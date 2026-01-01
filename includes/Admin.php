@@ -16,5 +16,6 @@ class Admin
         new Admin\Menu();
         new Admin\Handler();
         new Admin\Subject_Metabox();
+        new Admin\Grade_Metabox();
     }
 }
