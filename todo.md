@@ -1,0 +1,6 @@
+- [] Roll number
+- [] Departments
+- [] Submit button blocks
+- [] Form short code
+- [] Validation check
+- [] After complete validation create a student post

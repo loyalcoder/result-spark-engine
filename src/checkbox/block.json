@@ -2,6 +2,7 @@
 	"$schema": "https://schemas.wp.org/trunk/block.json",
 	"apiVersion": 3,
 	"name": "form-builder/input-checkbox",
+	"parent": ["form-builder/input-form"],
 	"version": "0.1.0",
 	"title": "Checkbox",
 	"category": "widgets",

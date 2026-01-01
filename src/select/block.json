@@ -6,6 +6,7 @@
 	"title": "Select",
 	"category": "widgets",
 	"icon": "smiley",
+	"parent": ["form-builder/input-form"],
 	"description": "Example block scaffolded with Create Block tool.",
 	"example": {},
 	"supports": {
