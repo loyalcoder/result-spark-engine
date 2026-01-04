@@ -94,6 +94,7 @@ export default function Edit({ attributes, setAttributes }) {
 						checked={isRequired}
 						onChange={(value) => setAttributes({ isRequired: value })}
 					/>
+
 					{!useTaxonomy ? (
 						<TextControl
 							label="Default Value"
@@ -191,11 +192,11 @@ export default function Edit({ attributes, setAttributes }) {
 							options?.map((option, index) => (
 								<div key={index} className="spark-engine-form-check">
 									<input
-										type="radio"
+										type="checkbox"
 										name={name}
 										id={`${id}-${index}-${name}`}
-										value={option.value}
-										defaultChecked={defaultValue === option.value}
+										value={option?.value}
+										defaultChecked={defaultValue === option?.value}
 										required={isRequired}
 										className="spe-radio-filed"
 									/>
@@ -203,7 +204,7 @@ export default function Edit({ attributes, setAttributes }) {
 										className="spark-engine-input-label"
 										htmlFor={`${id}-${index}-${name}`}
 									>
-										{option.label}
+										{option?.label}
 									</label>
 								</div>
 							))
@@ -214,7 +215,7 @@ export default function Edit({ attributes, setAttributes }) {
 						terms?.map((term, index) => (
 							<div key={index} className="spark-engine-form-check">
 								<input
-									type="radio"
+									type="checkbox"
 									name={name}
 									id={`${id}-${index}-${name}`}
 									value={term?.slug}

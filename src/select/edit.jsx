@@ -188,47 +188,33 @@ export default function Edit({ attributes, setAttributes }) {
 				<div className={`spark-engine-check-input-wrapper`}>
 					{!useTaxonomy ? (
 						options?.length > 0 ? (
-							options?.map((option, index) => (
-								<div key={index} className="spark-engine-form-check">
-									<input
-										type="radio"
-										name={name}
-										id={`${id}-${index}-${name}`}
-										value={option.value}
-										defaultChecked={defaultValue === option.value}
-										required={isRequired}
-										className="spe-radio-filed"
-									/>
-									<label
-										className="spark-engine-input-label"
-										htmlFor={`${id}-${index}-${name}`}
-									>
-										{option.label}
-									</label>
-								</div>
-							))
+							<select
+								className="spe-select-input"
+								name={name}
+								id={`${id}-${name}`}
+								defaultValue={defaultValue}
+							>
+								{options?.map((option, index) => (
+									<option key={index} value={option?.value}>
+										{option?.label}
+									</option>
+								))}
+							</select>
 						) : (
 							<div className="spe-not-found">No Data Found</div>
 						)
 					) : terms?.length > 0 ? (
-						terms?.map((term, index) => (
-							<div key={index} className="spark-engine-form-check">
-								<input
-									type="radio"
-									name={name}
-									id={`${id}-${index}-${name}`}
-									value={term?.slug}
-									required={isRequired}
-									className="spe-radio-filed"
-								/>
-								<label
-									className="spark-engine-input-label"
-									htmlFor={`${id}-${index}-${name}`}
-								>
+						<select
+							className="spe-select-input"
+							name={name}
+							id={`${id}-${name}`}
+						>
+							{terms?.map((term, index) => (
+								<option key={index} value={term?.slug}>
 									{term?.name}
-								</label>
-							</div>
-						))
+								</option>
+							))}
+						</select>
 					) : (
 						<div className="spe-not-found">No Data Found</div>
 					)}
