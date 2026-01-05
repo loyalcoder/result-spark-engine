@@ -5,12 +5,13 @@ namespace Result_Spark_Engine;
 if (!defined('ABSPATH')) {
     exit;
 }
-
+use Result_Spark_Engine\Traits\Result_Generation;
 /**
  * Ajax class
  */
 class RSE_Ajax
 {
+    use Result_Generation;
     /**
      * Current search term for student search filter
      *
@@ -36,6 +37,8 @@ class RSE_Ajax
         add_action('wp_ajax_rse_get_subjects_status', [$this, 'get_subjects_status']);
         add_action('wp_ajax_rse_get_subjects_for_student', [$this, 'get_subjects_for_student']);
         add_action('wp_ajax_rse_clear_results', [$this, 'clear_results']);
+        // result generation ajax handlers
+        add_action('wp_ajax_rse_result_generation', [$this, 'result_generation']);
     }
 
     /**
@@ -1026,53 +1029,88 @@ class RSE_Ajax
      *
      * @return void
      */
-    public function clear_results()
-    {
-        check_ajax_referer('rse_dashboard_nonce', 'nonce');
+    public function result_generation() {
 
+        check_ajax_referer('rse_dashboard_nonce', 'nonce');
+    
         if (!current_user_can('manage_options')) {
             wp_send_json_error([
-                'message' => esc_html__('You do not have permission to perform this action.', 'result-spark-engine'),
+                'message' => esc_html__('You do not have permission.', 'result-spark-engine'),
             ]);
         }
-
+    
         $exam_id = isset($_POST['exam_id']) ? absint($_POST['exam_id']) : 0;
-
         if ($exam_id <= 0) {
             wp_send_json_error([
                 'message' => esc_html__('Invalid exam ID.', 'result-spark-engine'),
             ]);
         }
-
+    
         global $wpdb;
-        $result_table = $wpdb->prefix . 'rse_result';
-
-        // Check if table exists
-        if ($wpdb->get_var("SHOW TABLES LIKE '$result_table'") != $result_table) {
-            wp_send_json_error([
-                'message' => esc_html__('Result table does not exist.', 'result-spark-engine'),
-            ]);
-        }
-
-        // Delete all results for this exam
-        $deleted = $wpdb->delete(
-            $result_table,
-            ['exam_id' => $exam_id],
-            ['%d']
+    
+        $limit  = 10;
+        $offset = 0;
+    
+        $sql = $wpdb->prepare(
+            "
+            SELECT 
+                student_id,
+                JSON_ARRAYAGG(
+                    JSON_OBJECT(
+                        'subject_id', subject_id,
+                        'marks', breakdown_marks
+                    )
+                ) AS subjects_marks
+            FROM {$wpdb->prefix}rse_mark_entry
+            WHERE exam_id = %d
+            GROUP BY student_id
+            ORDER BY student_id ASC
+            LIMIT %d OFFSET %d
+            ",
+            $exam_id,
+            $limit,
+            $offset
         );
+    
+        $db_results = $wpdb->get_results($sql, ARRAY_A);
+    
+        $final_results = [];
+    
+        foreach ($db_results as $row) {
 
-        if ($deleted === false) {
-            wp_send_json_error([
-                'message' => esc_html__('Failed to clear results. Database error: ', 'result-spark-engine') . $wpdb->last_error,
-            ]);
+            $subjects = json_decode($row['subjects_marks'], true);
+        
+            foreach ($subjects as $key => $subject) {
+                $subjects[$key]['marks'] = json_decode($subject['marks'], true);
+            }
+        
+            $final = $this->generate_final_result($subjects);
+        
+            $payload = [
+                'student_id' => (int) $row['student_id'],
+                'roll'       => null, // or fetch from meta/table if exists
+                'total_mark' => $final['total_mark'],
+                'gpa'        => $final['gpa'],
+                'grade'      => $final['grade'],
+                'subjects'   => $final['subjects'],
+            ];
+        
+            // ✅ SAVE RESULT
+            $this->save_student_result($payload, $exam_id);
+        
+            $final_results[] = [
+                'student_id' => $payload['student_id'],
+                'total_mark' => $payload['total_mark'],
+                'gpa'        => $payload['gpa'],
+                'grade'      => $payload['grade'],
+                'subjects'   => $payload['subjects'],
+            ];
         }
-
+        
         wp_send_json_success([
-            'message' => sprintf(
-                esc_html__('Successfully cleared %d result(s) for this exam.', 'result-spark-engine'),
-                $deleted
-            ),
-            'deleted_count' => $deleted,
+            'data' => $final_results
         ]);
     }
+    
+   
 }
