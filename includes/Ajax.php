@@ -35,7 +35,7 @@ class RSE_Ajax
         add_action('wp_ajax_rse_save_marks', [$this, 'save_marks']);
         add_action('wp_ajax_rse_get_subjects_status', [$this, 'get_subjects_status']);
         add_action('wp_ajax_rse_get_subjects_for_student', [$this, 'get_subjects_for_student']);
-        add_action('wp_ajax_rse_generate_result', [$this, 'generate_result']);
+        add_action('wp_ajax_rse_clear_results', [$this, 'clear_results']);
     }
 
     /**
@@ -1020,12 +1020,13 @@ class RSE_Ajax
         ]);
     }
 
+
     /**
-     * Generate result from mark entry table
+     * Clear results from database for a specific exam
      *
      * @return void
      */
-    public function generate_result()
+    public function clear_results()
     {
         check_ajax_referer('rse_dashboard_nonce', 'nonce');
 
@@ -1044,252 +1045,34 @@ class RSE_Ajax
         }
 
         global $wpdb;
-        $mark_entry_table = $wpdb->prefix . 'rse_mark_entry';
         $result_table = $wpdb->prefix . 'rse_result';
 
-        // Check if tables exist
-        if ($wpdb->get_var("SHOW TABLES LIKE '$mark_entry_table'") != $mark_entry_table) {
-            wp_send_json_error([
-                'message' => esc_html__('Mark entry table does not exist.', 'result-spark-engine'),
-            ]);
-        }
-
-        // Create result table if it doesn't exist
+        // Check if table exists
         if ($wpdb->get_var("SHOW TABLES LIKE '$result_table'") != $result_table) {
-            $installer = new \Result_Spark_Engine\Installer();
-            $installer->create_tables();
-        }
-
-        // Get all marks for this exam
-        $all_marks = $wpdb->get_results($wpdb->prepare(
-            "SELECT student_id, subject_id, breakdown_marks, remarks 
-             FROM {$mark_entry_table} 
-             WHERE exam_id = %d 
-             AND breakdown_marks IS NOT NULL 
-             AND breakdown_marks != '' 
-             AND breakdown_marks != 'null'
-             AND breakdown_marks != '[]'
-             AND LENGTH(breakdown_marks) > 2",
-            $exam_id
-        ));
-
-        if (empty($all_marks)) {
             wp_send_json_error([
-                'message' => esc_html__('No marks found for this exam.', 'result-spark-engine'),
+                'message' => esc_html__('Result table does not exist.', 'result-spark-engine'),
             ]);
         }
 
-        // Get exam's class level to get grade taxonomy
-        $exam_class_terms = wp_get_post_terms($exam_id, 'class_level', ['fields' => 'ids']);
-        if (empty($exam_class_terms)) {
-            wp_send_json_error([
-                'message' => esc_html__('No class found for this exam.', 'result-spark-engine'),
-            ]);
-        }
-
-        // Get grade taxonomy terms (assuming grade is linked to class or exam)
-        // For now, get all grade terms and use the first one's ranges
-        // You may need to adjust this based on your grade taxonomy structure
-        $grade_terms = get_terms([
-            'taxonomy' => 'grade',
-            'hide_empty' => false,
-        ]);
-
-        if (empty($grade_terms) || is_wp_error($grade_terms)) {
-            wp_send_json_error([
-                'message' => esc_html__('No grade ranges found. Please configure grade ranges first.', 'result-spark-engine'),
-            ]);
-        }
-
-        // Get grade ranges from the first grade term (you may need to adjust this logic)
-        $grade_term = $grade_terms[0];
-        $grade_ranges = get_term_meta($grade_term->term_id, '_rse_grade_ranges', true);
-        
-        if (empty($grade_ranges) || !is_array($grade_ranges)) {
-            wp_send_json_error([
-                'message' => esc_html__('Grade ranges not configured. Please configure grade ranges first.', 'result-spark-engine'),
-            ]);
-        }
-
-        // Group marks by student
-        $student_marks = [];
-        foreach ($all_marks as $mark) {
-            $student_id = $mark->student_id;
-            if (!isset($student_marks[$student_id])) {
-                $student_marks[$student_id] = [];
-            }
-            
-            $breakdown = json_decode($mark->breakdown_marks, true);
-            if (!is_array($breakdown)) {
-                $breakdown = [];
-            }
-            
-            // Calculate subject total from breakdown marks
-            // Breakdown marks are stored as: {"0": 30, "1": 20} or [30, 20]
-            $subject_total = 0;
-            foreach ($breakdown as $key => $value) {
-                // Handle both array format [30, 20] and object format {"0": 30, "1": 20}
-                if (is_numeric($value)) {
-                    $subject_total += floatval($value);
-                } elseif (is_array($value) && isset($value['mark'])) {
-                    // Fallback: if stored as array of objects with 'mark' key
-                    $subject_total += floatval($value['mark']);
-                }
-            }
-            
-            $student_marks[$student_id][] = [
-                'subject_id' => $mark->subject_id,
-                'subject_name' => get_the_title($mark->subject_id),
-                'breakdown_marks' => $breakdown,
-                'subject_total' => $subject_total,
-                'remarks' => $mark->remarks,
-            ];
-        }
-
-        $current_time = current_time('mysql');
-        $generated_count = 0;
-        $updated_count = 0;
-        $errors = [];
-
-        // Process each student's result
-        foreach ($student_marks as $student_id => $subjects) {
-            // Get student roll number
-            $roll_no = get_post_meta($student_id, 'roll_no', true);
-            
-            // Calculate total marks (sum of all subject totals)
-            $total_mark = 0;
-            $mark_in_details = [];
-            
-            foreach ($subjects as $subject_data) {
-                $subject_total = floatval($subject_data['subject_total']);
-                $total_mark += $subject_total;
-                $mark_in_details[] = [
-                    'subject_id' => $subject_data['subject_id'],
-                    'subject_name' => $subject_data['subject_name'],
-                    'breakdown_marks' => $subject_data['breakdown_marks'],
-                    'subject_total' => $subject_total,
-                    'remarks' => $subject_data['remarks'],
-                ];
-            }
-            
-            // Debug logging (can be removed later)
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log("RSE Generate Result - Student ID: {$student_id}, Total Mark: {$total_mark}, Subjects Count: " . count($subjects));
-            }
-
-            // Find grade and grade point based on total mark
-            $grade = '';
-            $grade_point = 0.00;
-            
-            // Sort grade ranges by max_mark descending to check highest ranges first
-            $sorted_ranges = $grade_ranges;
-            usort($sorted_ranges, function($a, $b) {
-                return floatval($b['max_mark']) <=> floatval($a['max_mark']);
-            });
-            
-            foreach ($sorted_ranges as $range) {
-                $min_mark = floatval($range['min_mark']);
-                $max_mark = floatval($range['max_mark']);
-                
-                if ($total_mark >= $min_mark && $total_mark <= $max_mark) {
-                    $grade = sanitize_text_field($range['grade']);
-                    $grade_point = floatval($range['point']);
-                    break;
-                }
-            }
-            
-            // If no grade found, use the lowest grade range as fallback
-            if (empty($grade) && !empty($grade_ranges)) {
-                $lowest_range = $grade_ranges[0];
-                foreach ($grade_ranges as $range) {
-                    if (floatval($range['min_mark']) < floatval($lowest_range['min_mark'])) {
-                        $lowest_range = $range;
-                    }
-                }
-                $grade = sanitize_text_field($lowest_range['grade']);
-                $grade_point = floatval($lowest_range['point']);
-            }
-            
-            // Debug logging (can be removed later)
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log("RSE Generate Result - Student ID: {$student_id}, Grade: {$grade}, Grade Point: {$grade_point}");
-            }
-
-            // Check if result already exists
-            $existing_result = $wpdb->get_var($wpdb->prepare(
-                "SELECT id FROM {$result_table} WHERE student_id = %d AND exam_id = %d",
-                $student_id,
-                $exam_id
-            ));
-
-            $data = [
-                'student_id' => $student_id,
-                'roll' => $roll_no ?: '',
-                'total_mark' => $total_mark,
-                'grade_point' => $grade_point,
-                'exam_id' => $exam_id,
-                'grade' => $grade,
-                'mark_in_details' => json_encode($mark_in_details),
-                'updated_at' => $current_time,
-            ];
-
-            if ($existing_result) {
-                // Update existing result
-                $updated = $wpdb->update(
-                    $result_table,
-                    $data,
-                    [
-                        'student_id' => $student_id,
-                        'exam_id' => $exam_id,
-                    ],
-                    ['%d', '%s', '%f', '%f', '%d', '%s', '%s', '%s'],
-                    ['%d', '%d']
-                );
-                
-                if ($updated !== false) {
-                    $updated_count++;
-                } else {
-                    $errors[] = sprintf(
-                        esc_html__('Failed to update result for student ID %d', 'result-spark-engine'),
-                        $student_id
-                    );
-                }
-            } else {
-                // Insert new result
-                $data['created_at'] = $current_time;
-                
-                $inserted = $wpdb->insert(
-                    $result_table,
-                    $data,
-                    ['%d', '%s', '%f', '%f', '%d', '%s', '%s', '%s', '%s']
-                );
-                
-                if ($inserted) {
-                    $generated_count++;
-                } else {
-                    $errors[] = sprintf(
-                        esc_html__('Failed to insert result for student ID %d', 'result-spark-engine'),
-                        $student_id
-                    );
-                }
-            }
-        }
-
-        $message = sprintf(
-            esc_html__('Results generated successfully! %d new results created, %d results updated.', 'result-spark-engine'),
-            $generated_count,
-            $updated_count
+        // Delete all results for this exam
+        $deleted = $wpdb->delete(
+            $result_table,
+            ['exam_id' => $exam_id],
+            ['%d']
         );
 
-        if (!empty($errors)) {
-            $message .= ' ' . esc_html__('Some errors occurred:', 'result-spark-engine') . ' ' . implode(', ', array_slice($errors, 0, 5));
+        if ($deleted === false) {
+            wp_send_json_error([
+                'message' => esc_html__('Failed to clear results. Database error: ', 'result-spark-engine') . $wpdb->last_error,
+            ]);
         }
 
         wp_send_json_success([
-            'message' => $message,
-            'generated' => $generated_count,
-            'updated' => $updated_count,
-            'total_students' => count($student_marks),
+            'message' => sprintf(
+                esc_html__('Successfully cleared %d result(s) for this exam.', 'result-spark-engine'),
+                $deleted
+            ),
+            'deleted_count' => $deleted,
         ]);
     }
 }

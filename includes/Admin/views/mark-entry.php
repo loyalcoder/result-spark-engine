@@ -162,9 +162,14 @@ $exams = get_posts([
                 <p style="margin: 0 0 15px 0; font-size: 14px; color: #0073aa; font-weight: 600;">
                     <?php echo esc_html__('All subjects have been marked! You can now generate results.', 'result-spark-engine'); ?>
                 </p>
-                <button type="button" class="button button-primary button-large" id="rse-generate-result-btn" style="padding: 12px 30px; font-size: 16px;">
-                    <?php echo esc_html__('Generate Result', 'result-spark-engine'); ?>
-                </button>
+                <div style="display: flex; gap: 15px; justify-content: center; align-items: center; flex-wrap: wrap;">
+                    <button type="button" class="button button-primary button-large" id="rse-generate-result-btn" style="padding: 12px 30px; font-size: 16px;">
+                        <?php echo esc_html__('Generate Result', 'result-spark-engine'); ?>
+                    </button>
+                    <button type="button" class="button button-secondary button-large" id="rse-clear-result-btn" style="padding: 12px 30px; font-size: 16px; color: #dc3232; border-color: #dc3232;">
+                        <?php echo esc_html__('Clear Results', 'result-spark-engine'); ?>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
