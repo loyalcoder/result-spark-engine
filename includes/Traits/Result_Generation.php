@@ -28,23 +28,49 @@ trait Result_Generation
      * SUBJECT GRADE & GPA
      * --------------------------------- */
 
-    protected function calculate_grade_point(float $marks): array
-    {
-        if ($marks >= 80) return ['grade' => 'A+', 'gpa' => 5.00];
-        if ($marks >= 70) return ['grade' => 'A',  'gpa' => 4.00];
-        if ($marks >= 60) return ['grade' => 'A-', 'gpa' => 3.50];
-        if ($marks >= 50) return ['grade' => 'B',  'gpa' => 3.00];
-        if ($marks >= 40) return ['grade' => 'C',  'gpa' => 2.00];
-        if ($marks >= 33) return ['grade' => 'D',  'gpa' => 1.00];
-
-        return ['grade' => 'F', 'gpa' => 0.00];
-    }
+     protected function calculate_grade_point(float $marks, int $subject_id): array
+     {
+         $grade_terms = get_the_terms($subject_id, 'grade');
+     
+         if (empty($grade_terms) || is_wp_error($grade_terms)) {
+             return ['grade' => 'F', 'gpa' => 0.00];
+         }
+     
+         $grade_ranges = get_term_meta(
+             $grade_terms[0]->term_id,
+             '_rse_grade_ranges',
+             true
+         );
+     
+         if (empty($grade_ranges) || !is_array($grade_ranges)) {
+             return ['grade' => 'F', 'gpa' => 0.00];
+         }
+     
+         foreach ($grade_ranges as $range) {
+             $min = (float) $range['min_mark'];
+             $max = (float) $range['max_mark'];
+     
+             if ($marks >= $min && $marks <= $max) {
+                 return [
+                     'grade' => sanitize_text_field($range['grade']),
+                     'gpa'   => (float) $range['point'],
+                 ];
+             }
+         }
+     
+         // Fallback (safety net)
+         return [
+             'grade' => 'F',
+             'gpa'   => 0.00,
+         ];
+     }
+     
 
     /* ---------------------------------
      * FINAL GPA → FINAL GRADE
      * --------------------------------- */
 
-    protected function calculate_final_grade(float $gpa): string
+    protected function calculate_final_grade(float $gpa, int $subject_id): string
     {
         if ($gpa >= 5)   return 'A+';
         if ($gpa >= 4)   return 'A';
@@ -80,11 +106,30 @@ trait Result_Generation
         $total_marks  = 0;
         $total_gpa    = 0;
         $subject_count = count($subjects);
+        $has_failed_subject = false; // Track if any subject failed
 
         foreach ($subjects as $key => $subject) {
 
             $subject_total = array_sum($subject['marks']);
-            $gradeData     = $this->calculate_grade_point($subject_total);
+            $subject_id    = $subject['subject_id'];
+            
+            // Check if subject failed based on mandatory pass components
+            $subject_failed = $this->check_subject_failed_checker($subject['marks'], $subject_id);
+            
+            // Calculate grade and GPA for this subject
+            $gradeData = $this->calculate_grade_point($subject_total, $subject_id);
+            
+            // Check if subject failed: mandatory components failed, grade is "F" or "Failed", or GPA is 0.00
+            $grade_letter = strtoupper(trim($gradeData['grade']));
+            $is_grade_f = ($grade_letter === 'F' || $grade_letter === 'FAILED');
+            $is_gpa_zero = ($gradeData['gpa'] == 0.00);
+            
+            if ($subject_failed || $is_grade_f || $is_gpa_zero) {
+                $has_failed_subject = true;
+                // Mark subject as failed
+                $gradeData['grade'] = 'F';
+                $gradeData['gpa'] = 0.00;
+            }
 
             $subjects[$key]['subject_name'] = $this->get_subject_name_by_id($subject['subject_id']);
             $subjects[$key]['total']        = $subject_total;
@@ -97,10 +142,18 @@ trait Result_Generation
 
         $final_gpa = $subject_count > 0 ? round($total_gpa / $subject_count, 2) : 0;
 
+        // If any subject failed, mark overall result as "F" with 0.00 GPA
+        if ($has_failed_subject) {
+            $final_gpa = 0.00;
+            $final_grade = 'F';
+        } else {
+            $final_grade = $this->calculate_final_grade($final_gpa, $subject_id ?? 0);
+        }
+
         return [
             'total_mark' => $total_marks,
             'gpa'        => $final_gpa,
-            'grade'      => $this->calculate_final_grade($final_gpa),
+            'grade'      => $final_grade,
             'subjects'   => $subjects,
         ];
     }
@@ -162,5 +215,37 @@ trait Result_Generation
         return (bool) $wpdb->insert($table, $insert_data, $formats);
     }
 }
+    protected function check_subject_failed_checker(array $marks, int $subject_id): bool
+    {
+        $mark_breakdown = get_post_meta($subject_id, '_rse_mark_breakdown', true);
+
+        // If no breakdown found, assume not failed
+        if (empty($mark_breakdown) || !is_array($mark_breakdown)) {
+            return false;
+        }
+
+        foreach ($mark_breakdown as $index => $part) {
+
+            // Skip if mark not provided for this part
+            if (!isset($marks[$index])) {
+                continue;
+            }
+
+            // Check only mandatory pass components
+            if (!empty($part['need_to_pass'])) {
+
+                $obtained_mark = (float) $marks[$index];
+                $pass_mark     = (float) ($part['pass_mark'] ?? 0);
+
+                if ($obtained_mark < $pass_mark) {
+                    // Subject failed due to mandatory part failure
+                    return true;
+                }
+            }
+        }
+
+        // No mandatory part failed
+        return false;
+    }
 
 }

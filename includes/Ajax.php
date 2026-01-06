@@ -1079,16 +1079,18 @@ class RSE_Ajax
         foreach ($db_results as $row) {
 
             $subjects = json_decode($row['subjects_marks'], true);
-        
             foreach ($subjects as $key => $subject) {
                 $subjects[$key]['marks'] = json_decode($subject['marks'], true);
             }
         
             $final = $this->generate_final_result($subjects);
         
+            // Get student roll number from post meta
+            $roll_no = get_post_meta($row['student_id'], 'roll_no', true);
+        
             $payload = [
                 'student_id' => (int) $row['student_id'],
-                'roll'       => null, // or fetch from meta/table if exists
+                'roll'       => $roll_no ?: '',
                 'total_mark' => $final['total_mark'],
                 'gpa'        => $final['gpa'],
                 'grade'      => $final['grade'],
@@ -1100,6 +1102,7 @@ class RSE_Ajax
         
             $final_results[] = [
                 'student_id' => $payload['student_id'],
+                'roll'       => $payload['roll'],
                 'total_mark' => $payload['total_mark'],
                 'gpa'        => $payload['gpa'],
                 'grade'      => $payload['grade'],
