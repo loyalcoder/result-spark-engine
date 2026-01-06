@@ -16,6 +16,7 @@ class Admin
         new Admin\Menu();
         new Admin\Handler();
         new Admin\Subject_Metabox();
+        new Admin\Subject_No_Major_Metabox();
         new Admin\Grade_Metabox();
         new Admin\Student_Metabox();
         new Admin\Class_Level_Metabox();

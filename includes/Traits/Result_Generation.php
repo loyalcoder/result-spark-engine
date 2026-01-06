@@ -134,13 +134,29 @@ trait Result_Generation
     {
         $total_marks  = 0;
         $total_gpa    = 0;
-        $subject_count = count($subjects);
-        $has_failed_subject = false; // Track if any subject failed
+        $subject_count = 0; // Count only regular subjects for GPA calculation
+        $has_failed_subject = false; // Track if any regular subject failed
+        
+        // Get student's non-major subjects (includes both non-major and potentially 4th subjects)
+        $non_major_subjects = [];
+        if ($student_id > 0) {
+            $non_major_subjects = get_post_meta($student_id, '_rse_non_major_subjects', true);
+            if (!is_array($non_major_subjects)) {
+                $non_major_subjects = [];
+            }
+        }
+        
+        // Separate no major subjects from regular subjects
+        $no_major_marks = 0;
+        $no_major_gpa = 0;
 
         foreach ($subjects as $key => $subject) {
 
             $subject_total = array_sum($subject['marks']);
             $subject_id    = $subject['subject_id'];
+            
+            // Check if this subject is in student's non-major subjects list
+            $is_no_major_type = in_array($subject_id, $non_major_subjects);
             
             // Check if subject failed based on mandatory pass components
             $subject_failed = $this->check_subject_failed_checker($subject['marks'], $subject_id);
@@ -153,9 +169,16 @@ trait Result_Generation
             $is_grade_f = ($grade_letter === 'F' || $grade_letter === 'FAILED');
             $is_gpa_zero = ($gradeData['gpa'] == 0.00);
             
-            if ($subject_failed || $is_grade_f || $is_gpa_zero) {
+            $subject_is_failed = $subject_failed || $is_grade_f || $is_gpa_zero;
+            
+            // For no major subjects: failure doesn't cause overall failure
+            if ($subject_is_failed && !$is_no_major_type) {
                 $has_failed_subject = true;
                 // Mark subject as failed
+                $gradeData['grade'] = 'F';
+                $gradeData['gpa'] = 0.00;
+            } elseif ($subject_is_failed && $is_no_major_type) {
+                // No major subject failed - mark as F but don't cause overall failure
                 $gradeData['grade'] = 'F';
                 $gradeData['gpa'] = 0.00;
             }
@@ -164,14 +187,40 @@ trait Result_Generation
             $subjects[$key]['total']        = $subject_total;
             $subjects[$key]['grade']        = $gradeData['grade'];
             $subjects[$key]['gpa']          = $gradeData['gpa'];
+            $subjects[$key]['is_no_major']  = $is_no_major_type;
 
-            $total_marks += $subject_total;
-            $total_gpa   += $gradeData['gpa'];
+            // Handle no major subjects separately
+            if ($is_no_major_type) {
+                // Get minimum addable mark and point from subject settings
+                $min_addable_mark = floatval(get_post_meta($subject_id, '_rse_min_addable_mark', true) ?: 0);
+                $min_point = floatval(get_post_meta($subject_id, '_rse_min_point', true) ?: 0);
+                
+                // Only add if marks meet minimum requirement
+                if ($subject_total >= $min_addable_mark) {
+                    $no_major_marks += $subject_total;
+                }
+                
+                // Only add GPA if it meets minimum point requirement
+                if ($gradeData['gpa'] >= $min_point) {
+                    $no_major_gpa += $gradeData['gpa'];
+                }
+            } else {
+                // Regular subjects - count for GPA calculation
+                $total_marks += $subject_total;
+                $total_gpa   += $gradeData['gpa'];
+                $subject_count++;
+            }
         }
 
+        // Calculate final GPA from regular subjects only
         $final_gpa = $subject_count > 0 ? round($total_gpa / $subject_count, 2) : 0;
 
-        // If any subject failed, mark overall result as "F" with 0.00 GPA
+        // Add no major subject marks and points after main calculation
+        $total_marks += $no_major_marks;
+        $total_gpa += $no_major_gpa;
+
+        // If any regular subject failed, mark overall result as "F" with 0.00 GPA
+        // No major subject failures don't cause overall failure
         if ($has_failed_subject) {
             $final_gpa = 0.00;
             $final_grade = 'F';
