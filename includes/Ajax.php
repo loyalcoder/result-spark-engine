@@ -39,6 +39,9 @@ class RSE_Ajax
         add_action('wp_ajax_rse_clear_results', [$this, 'clear_results']);
         // result generation ajax handlers
         add_action('wp_ajax_rse_result_generation', [$this, 'result_generation']);
+        // view results ajax handlers
+        add_action('wp_ajax_rse_get_results', [$this, 'get_results']);
+        add_action('wp_ajax_rse_get_departments_for_exam', [$this, 'get_departments_for_exam']);
     }
 
     /**
@@ -1079,7 +1082,7 @@ class RSE_Ajax
     public function result_generation()
     {
         check_ajax_referer('rse_dashboard_nonce', 'nonce');
-
+    
         if (!current_user_can('manage_options')) {
             wp_send_json_error([
                 'message' => esc_html__('You do not have permission.', 'result-spark-engine'),
@@ -1091,7 +1094,7 @@ class RSE_Ajax
             @ini_set('memory_limit', '512M');
             @ini_set('max_execution_time', '300');
         }
-
+    
         $exam_id = isset($_POST['exam_id']) ? absint($_POST['exam_id']) : 0;
         $chunk = isset($_POST['chunk']) ? absint($_POST['chunk']) : 0;
         $chunk_size = isset($_POST['chunk_size']) ? absint($_POST['chunk_size']) : 50;
@@ -1101,9 +1104,9 @@ class RSE_Ajax
                 'message' => esc_html__('Invalid exam ID.', 'result-spark-engine'),
             ]);
         }
-
+    
         global $wpdb;
-
+    
         // Get total count of students for this exam
         $total_students = $wpdb->get_var($wpdb->prepare(
             "SELECT COUNT(DISTINCT student_id) FROM {$wpdb->prefix}rse_mark_entry WHERE exam_id = %d",
@@ -1138,9 +1141,9 @@ class RSE_Ajax
             $chunk_size,
             $offset
         );
-
+    
         $db_results = $wpdb->get_results($sql, ARRAY_A);
-
+    
         if (empty($db_results)) {
             wp_send_json_error([
                 'message' => esc_html__('No more students to process.', 'result-spark-engine'),
@@ -1149,7 +1152,7 @@ class RSE_Ajax
 
         $processed = 0;
         $final_results = [];
-
+    
         foreach ($db_results as $row) {
             $subjects = json_decode($row['subjects_marks'], true);
             if (empty($subjects)) {
@@ -1159,12 +1162,12 @@ class RSE_Ajax
             foreach ($subjects as $key => $subject) {
                 $subjects[$key]['marks'] = json_decode($subject['marks'], true);
             }
-
+        
             $final = $this->generate_final_result($subjects, (int) $row['student_id']);
-
+        
             // Get student roll number from post meta
             $roll_no = get_post_meta($row['student_id'], 'roll_no', true);
-
+        
             $payload = [
                 'student_id' => (int) $row['student_id'],
                 'roll'       => $roll_no ?: '',
@@ -1173,10 +1176,10 @@ class RSE_Ajax
                 'grade'      => $final['grade'],
                 'subjects'   => $final['subjects'],
             ];
-
+        
             // Save result
             $this->save_student_result($payload, $exam_id);
-
+        
             $final_results[] = [
                 'student_id' => $payload['student_id'],
                 'roll'       => $payload['roll'],
@@ -1190,7 +1193,7 @@ class RSE_Ajax
 
         $total_chunks = ceil($total_students / $chunk_size);
         $is_complete = ($chunk + 1) >= $total_chunks;
-
+        
         wp_send_json_success([
             'chunk' => $chunk,
             'processed' => $processed,
@@ -1203,6 +1206,218 @@ class RSE_Ajax
                 $chunk + 1,
                 $total_chunks
             ),
+        ]);
+    }
+
+    /**
+     * Get departments for a specific exam
+     *
+     * @return void
+     */
+    public function get_departments_for_exam()
+    {
+        check_ajax_referer('rse_dashboard_nonce', 'nonce');
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error([
+                'message' => esc_html__('You do not have permission.', 'result-spark-engine'),
+            ]);
+        }
+
+        $exam_id = isset($_POST['exam_id']) ? absint($_POST['exam_id']) : 0;
+        if ($exam_id <= 0) {
+            wp_send_json_error([
+                'message' => esc_html__('Invalid exam ID.', 'result-spark-engine'),
+            ]);
+        }
+
+        // Get exam's class level
+        $exam_class_terms = wp_get_post_terms($exam_id, 'class_level', ['fields' => 'ids']);
+        if (empty($exam_class_terms) || is_wp_error($exam_class_terms)) {
+            wp_send_json_success(['departments' => []]);
+        }
+
+        // Get all departments for students in this class
+        $departments = get_terms([
+            'taxonomy' => 'department',
+            'hide_empty' => true,
+        ]);
+
+        $departments_list = [];
+        foreach ($departments as $dept) {
+            // Check if there are students with this department in the exam's class
+            $students = get_posts([
+                'post_type' => 'students',
+                'post_status' => 'publish',
+                'posts_per_page' => 1,
+                'fields' => 'ids',
+                'tax_query' => [
+                    'relation' => 'AND',
+                    [
+                        'taxonomy' => 'class_level',
+                        'field' => 'term_id',
+                        'terms' => $exam_class_terms,
+                    ],
+                    [
+                        'taxonomy' => 'department',
+                        'field' => 'term_id',
+                        'terms' => $dept->term_id,
+                    ],
+                ],
+            ]);
+
+            if (!empty($students)) {
+                $departments_list[] = [
+                    'id' => $dept->term_id,
+                    'name' => $dept->name,
+                ];
+            }
+        }
+
+        wp_send_json_success(['departments' => $departments_list]);
+    }
+
+    /**
+     * Get results with pagination and filters
+     *
+     * @return void
+     */
+    public function get_results()
+    {
+        check_ajax_referer('rse_dashboard_nonce', 'nonce');
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error([
+                'message' => esc_html__('You do not have permission.', 'result-spark-engine'),
+            ]);
+        }
+
+        $exam_id = isset($_POST['exam_id']) ? absint($_POST['exam_id']) : 0;
+        $page = isset($_POST['page']) ? absint($_POST['page']) : 1;
+        $per_page = isset($_POST['per_page']) ? absint($_POST['per_page']) : 10;
+        $department_id = isset($_POST['department_id']) ? absint($_POST['department_id']) : 0;
+        $sort_by = isset($_POST['sort_by']) ? sanitize_text_field($_POST['sort_by']) : 'default';
+
+        if ($exam_id <= 0) {
+            wp_send_json_error([
+                'message' => esc_html__('Invalid exam ID.', 'result-spark-engine'),
+            ]);
+        }
+
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'rse_result';
+
+        // Build WHERE clause with prepared statement
+        $where_conditions = ['exam_id = %d'];
+        $where_values = [$exam_id];
+
+        // Filter by department if specified
+        if ($department_id > 0) {
+            // Get student IDs with this department
+            $exam_class_terms = wp_get_post_terms($exam_id, 'class_level', ['fields' => 'ids']);
+            if (!empty($exam_class_terms) && !is_wp_error($exam_class_terms)) {
+                $dept_students = get_posts([
+                    'post_type' => 'students',
+                    'post_status' => 'publish',
+                    'posts_per_page' => -1,
+                    'fields' => 'ids',
+                    'tax_query' => [
+                        'relation' => 'AND',
+                        [
+                            'taxonomy' => 'class_level',
+                            'field' => 'term_id',
+                            'terms' => $exam_class_terms,
+                        ],
+                        [
+                            'taxonomy' => 'department',
+                            'field' => 'term_id',
+                            'terms' => $department_id,
+                        ],
+                    ],
+                ]);
+
+                if (!empty($dept_students)) {
+                    $placeholders = implode(',', array_fill(0, count($dept_students), '%d'));
+                    $where_conditions[] = "student_id IN ($placeholders)";
+                    $where_values = array_merge($where_values, $dept_students);
+                } else {
+                    // No students with this department
+                    wp_send_json_success([
+                        'results' => [],
+                        'total' => 0,
+                        'page' => $page,
+                        'per_page' => $per_page,
+                        'total_pages' => 0,
+                    ]);
+                }
+            }
+        }
+
+        $where_clause = implode(' AND ', $where_conditions);
+
+        // Build ORDER BY clause (safe values only)
+        $order_by = 'id ASC';
+        switch ($sort_by) {
+            case 'mark_desc':
+                $order_by = 'total_mark DESC';
+                break;
+            case 'mark_asc':
+                $order_by = 'total_mark ASC';
+                break;
+            case 'gpa_desc':
+                $order_by = 'grade_point DESC';
+                break;
+            case 'gpa_asc':
+                $order_by = 'grade_point ASC';
+                break;
+        }
+
+        // Get total count
+        $total_query = "SELECT COUNT(*) FROM {$table_name} WHERE {$where_clause}";
+        if (count($where_values) > 0) {
+            $total = $wpdb->get_var($wpdb->prepare($total_query, $where_values));
+        } else {
+            $total = $wpdb->get_var($total_query);
+        }
+
+        // Calculate pagination
+        $offset = ($page - 1) * $per_page;
+        $total_pages = ceil($total / $per_page);
+
+        // Get results
+        $query_values = array_merge($where_values, [$per_page, $offset]);
+        $results_query = "SELECT * FROM {$table_name} WHERE {$where_clause} ORDER BY {$order_by} LIMIT %d OFFSET %d";
+        $results = $wpdb->get_results($wpdb->prepare($results_query, $query_values));
+
+        // Format results
+        $formatted_results = [];
+        foreach ($results as $result) {
+            $student = get_post($result->student_id);
+            $student_name = $student ? $student->post_title : 'Unknown';
+            
+            // Get student department
+            $student_depts = wp_get_post_terms($result->student_id, 'department', ['fields' => 'names']);
+            $department_name = !empty($student_depts) && !is_wp_error($student_depts) ? implode(', ', $student_depts) : '';
+
+            $formatted_results[] = [
+                'id' => $result->id,
+                'student_id' => $result->student_id,
+                'student_name' => $student_name,
+                'roll' => $result->roll,
+                'total_mark' => floatval($result->total_mark),
+                'gpa' => floatval($result->grade_point),
+                'grade' => $result->grade,
+                'department' => $department_name,
+                'subjects' => json_decode($result->mark_in_details, true),
+            ];
+        }
+
+        wp_send_json_success([
+            'results' => $formatted_results,
+            'total' => (int) $total,
+            'page' => $page,
+            'per_page' => $per_page,
+            'total_pages' => $total_pages,
         ]);
     }
     

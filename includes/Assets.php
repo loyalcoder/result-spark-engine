@@ -126,5 +126,32 @@ class Assets
                 ]
             );
         }
+
+        // Enqueue view results assets
+        if ('rse-dashboard_page_rse-view-results' === $hook || 
+            (isset($_GET['page']) && $_GET['page'] === 'rse-view-results')) {
+            wp_enqueue_style(
+                'rse-view-results',
+                RSE_ASSETS . '/css/view-results.css',
+                [],
+                RSE_VERSION
+            );
+            wp_enqueue_script(
+                'rse-view-results',
+                RSE_ASSETS . '/js/view-results.js',
+                ['jquery'],
+                RSE_VERSION,
+                true
+            );
+
+            wp_localize_script(
+                'rse-view-results',
+                'rseViewResults',
+                [
+                    'ajax_url' => admin_url('admin-ajax.php'),
+                    'nonce' => wp_create_nonce('rse_dashboard_nonce'),
+                ]
+            );
+        }
     }
 }

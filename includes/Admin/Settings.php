@@ -46,6 +46,22 @@ class Settings
     }
 
     /**
+     * View Results page handler
+     *
+     * @return void
+     */
+    public function view_results_page()
+    {
+        $template = __DIR__ . '/views/view-results.php';
+
+        if (file_exists($template)) {
+            include $template;
+        } else {
+            echo '<div class="wrap"><h1>' . esc_html__('View Results', 'result-spark-engine') . '</h1><p>' . esc_html__('View results template not found.', 'result-spark-engine') . '</p></div>';
+        }
+    }
+
+    /**
      * Report handler
      *
      * @return void

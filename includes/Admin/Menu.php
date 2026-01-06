@@ -32,6 +32,7 @@ class Menu
         add_menu_page(esc_html__('Result Spark Engine Dashboard', 'result-spark-engine'), esc_html__('Result Spark Engine', 'result-spark-engine'), $capability, $parent_slug, [$this, 'dashboard_page'], 'dashicons-buddicons-groups');
         add_submenu_page($parent_slug, esc_html__('Settings', 'result-spark-engine'), esc_html__('Settings', 'result-spark-engine'), $capability, $parent_slug, [$this, 'dashboard_page']);
         add_submenu_page($parent_slug, esc_html__('Mark Entry', 'result-spark-engine'), esc_html__('Mark Entry', 'result-spark-engine'), $capability, 'rse-mark-entry', [$this, 'mark_entry_page']);
+        add_submenu_page($parent_slug, esc_html__('View Results', 'result-spark-engine'), esc_html__('View Results', 'result-spark-engine'), $capability, 'rse-view-results', [$this, 'view_results_page']);
         add_submenu_page($parent_slug, esc_html__('Report', 'result-spark-engine'), esc_html__('Report', 'result-spark-engine'), $capability, 'rse-report', [$this, 'report_page']);
     }
 
@@ -55,6 +56,17 @@ class Menu
     {
         $settings = new Settings();
         $settings->mark_entry_page();
+    }
+
+    /**
+     * View Results page
+     *
+     * @return void
+     */
+    public function view_results_page()
+    {
+        $settings = new Settings();
+        $settings->view_results_page();
     }
 
     /**
