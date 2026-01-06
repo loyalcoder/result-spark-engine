@@ -111,7 +111,7 @@ $exams = get_posts([
                         <h2 style="margin: 0; font-size: 18px; color: #23282d;" id="rse-form-title">
                             <?php echo esc_html__('Enter Marks', 'result-spark-engine'); ?>
                         </h2>
-                        <div style="display: flex; gap: 10px; align-items: center;">
+                        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                             <input 
                                 type="text" 
                                 id="rse-student-search" 
@@ -121,6 +121,16 @@ $exams = get_posts([
                             <button type="button" class="button" id="rse-clear-search" style="padding: 8px 12px; font-size: 13px; display: none;">
                                 <?php echo esc_html__('Clear', 'result-spark-engine'); ?>
                             </button>
+                            <?php if (class_exists('Result_Spark_Engine_Pro')) : ?>
+                            <button type="button" class="button button-secondary" id="rse-export-csv-btn" style="padding: 8px 12px; font-size: 13px;">
+                                <span class="dashicons dashicons-download" style="vertical-align: middle; margin-right: 5px;"></span>
+                                <?php echo esc_html__('Export CSV', 'result-spark-engine'); ?>
+                            </button>
+                            <button type="button" class="button button-secondary" id="rse-import-csv-btn" style="padding: 8px 12px; font-size: 13px;">
+                                <span class="dashicons dashicons-upload" style="vertical-align: middle; margin-right: 5px;"></span>
+                                <?php echo esc_html__('Import CSV', 'result-spark-engine'); ?>
+                            </button>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
@@ -133,7 +143,19 @@ $exams = get_posts([
                     <!-- Pagination will be loaded here -->
                 </div>
 
-                <div style="padding: 20px; border-top: 1px solid #ddd; background: #f9f9f9; text-align: right;">
+                <div style="padding: 20px; border-top: 1px solid #ddd; background: #f9f9f9; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <?php if (class_exists('Result_Spark_Engine_Pro')) : ?>
+                    <div style="display: flex; gap: 10px;">
+                        <button type="button" class="button button-secondary" id="rse-export-csv-btn-bottom" style="padding: 10px 20px; font-size: 14px;">
+                            <span class="dashicons dashicons-download" style="vertical-align: middle; margin-right: 5px;"></span>
+                            <?php echo esc_html__('Export CSV', 'result-spark-engine'); ?>
+                        </button>
+                        <button type="button" class="button button-secondary" id="rse-import-csv-btn-bottom" style="padding: 10px 20px; font-size: 14px;">
+                            <span class="dashicons dashicons-upload" style="vertical-align: middle; margin-right: 5px;"></span>
+                            <?php echo esc_html__('Import CSV', 'result-spark-engine'); ?>
+                        </button>
+                    </div>
+                    <?php endif; ?>
                     <button type="submit" class="button button-primary button-large" id="rse-save-marks-btn" style="padding: 10px 20px; font-size: 14px;">
                         <?php echo esc_html__('Save Marks', 'result-spark-engine'); ?>
                     </button>

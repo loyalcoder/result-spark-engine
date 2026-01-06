@@ -111,6 +111,9 @@ class Assets
                 true
             );
 
+            // Check if pro plugin is active
+            $is_pro_active = class_exists('Result_Spark_Engine_Pro');
+
             wp_localize_script(
                 'rse-mark-entry',
                 'rseMarkEntry',
@@ -119,6 +122,7 @@ class Assets
                     'nonce' => wp_create_nonce('rse_dashboard_nonce'),
                     'loading_text' => esc_html__('Loading...', 'result-spark-engine'),
                     'select_required_text' => esc_html__('Please select exam and subject.', 'result-spark-engine'),
+                    'is_pro_active' => $is_pro_active,
                 ]
             );
         }

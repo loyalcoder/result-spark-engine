@@ -19,5 +19,6 @@ class Admin
         new Admin\Grade_Metabox();
         new Admin\Student_Metabox();
         new Admin\Class_Level_Metabox();
+        new Admin\Department_Metabox();
     }
 }

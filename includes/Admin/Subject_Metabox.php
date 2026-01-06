@@ -52,7 +52,6 @@ class Subject_Metabox
         $subject_code = get_post_meta($post->ID, '_rse_subject_code', true);
         $total_mark = get_post_meta($post->ID, '_rse_total_mark', true);
         $mark_breakdown = get_post_meta($post->ID, '_rse_mark_breakdown', true);
-        $pass_mark = get_post_meta($post->ID, '_rse_pass_mark', true);
         $compulsory_subject = get_post_meta($post->ID, '_rse_compulsory_subject', true);
 
         if (!is_array($mark_breakdown)) {
@@ -181,25 +180,6 @@ class Subject_Metabox
 
             <tr>
                 <th scope="row">
-                    <label for="rse_pass_mark"><?php echo esc_html__('Overall Pass Mark', 'result-spark-engine'); ?></label>
-                </th>
-                <td>
-                    <label>
-                        <input 
-                            type="checkbox" 
-                            id="rse_pass_mark" 
-                            name="rse_pass_mark" 
-                            value="1" 
-                            <?php checked($pass_mark, '1'); ?>
-                        />
-                        <?php echo esc_html__('Enable overall pass mark requirement', 'result-spark-engine'); ?>
-                    </label>
-                    <p class="description"><?php echo esc_html__('If checked, students must achieve the overall pass mark to pass this subject.', 'result-spark-engine'); ?></p>
-                </td>
-            </tr>
-
-            <tr>
-                <th scope="row">
                     <label for="rse_compulsory_subject"><?php echo esc_html__('Compulsory Subjects', 'result-spark-engine'); ?></label>
                 </th>
                 <td>
@@ -297,13 +277,6 @@ class Subject_Metabox
             }
         } else {
             delete_post_meta($post_id, '_rse_mark_breakdown');
-        }
-
-        // Save pass mark checkbox
-        if (isset($_POST['rse_pass_mark'])) {
-            update_post_meta($post_id, '_rse_pass_mark', '1');
-        } else {
-            delete_post_meta($post_id, '_rse_pass_mark');
         }
 
         // Save compulsory subject checkbox
