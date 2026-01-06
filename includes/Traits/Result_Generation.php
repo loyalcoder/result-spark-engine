@@ -70,8 +70,37 @@ trait Result_Generation
      * FINAL GPA → FINAL GRADE
      * --------------------------------- */
 
-    protected function calculate_final_grade(float $gpa, int $subject_id): string
+    protected function calculate_final_grade(float $gpa, int $student_id = 0): string
     {
+        // Get student's class_level to use custom thresholds
+        $class_level_id = 0;
+        if ($student_id > 0) {
+            $class_level_terms = wp_get_post_terms($student_id, 'class_level', ['fields' => 'ids']);
+            if (!empty($class_level_terms) && !is_wp_error($class_level_terms)) {
+                $class_level_id = $class_level_terms[0];
+            }
+        }
+
+        // Get custom thresholds from class_level term meta
+        $thresholds = [];
+        if ($class_level_id > 0) {
+            $thresholds = get_term_meta($class_level_id, '_rse_final_grade_thresholds', true);
+        }
+
+        // If custom thresholds exist, use them
+        if (!empty($thresholds) && is_array($thresholds)) {
+            // Thresholds should be sorted by min_gpa descending (highest first)
+            foreach ($thresholds as $threshold) {
+                $min_gpa = floatval($threshold['min_gpa'] ?? 0);
+                $grade = sanitize_text_field($threshold['grade'] ?? '');
+                
+                if (!empty($grade) && $gpa >= $min_gpa) {
+                    return $grade;
+                }
+            }
+        }
+
+        // Fallback to default thresholds if no custom thresholds found
         if ($gpa >= 5)   return 'A+';
         if ($gpa >= 4)   return 'A';
         if ($gpa >= 3.5) return 'A-';
@@ -101,7 +130,7 @@ trait Result_Generation
      * FINAL RESULT BUILDER
      * --------------------------------- */
 
-    protected function generate_final_result(array $subjects): array
+    protected function generate_final_result(array $subjects, int $student_id = 0): array
     {
         $total_marks  = 0;
         $total_gpa    = 0;
@@ -147,7 +176,7 @@ trait Result_Generation
             $final_gpa = 0.00;
             $final_grade = 'F';
         } else {
-            $final_grade = $this->calculate_final_grade($final_gpa, $subject_id ?? 0);
+            $final_grade = $this->calculate_final_grade($final_gpa, $student_id);
         }
 
         return [

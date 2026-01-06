@@ -1083,7 +1083,7 @@ class RSE_Ajax
                 $subjects[$key]['marks'] = json_decode($subject['marks'], true);
             }
         
-            $final = $this->generate_final_result($subjects);
+            $final = $this->generate_final_result($subjects, (int) $row['student_id']);
         
             // Get student roll number from post meta
             $roll_no = get_post_meta($row['student_id'], 'roll_no', true);
