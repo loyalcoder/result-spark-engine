@@ -1029,28 +1029,95 @@ class RSE_Ajax
      *
      * @return void
      */
-    public function result_generation() {
-
+    public function clear_results()
+    {
         check_ajax_referer('rse_dashboard_nonce', 'nonce');
-    
+
         if (!current_user_can('manage_options')) {
             wp_send_json_error([
-                'message' => esc_html__('You do not have permission.', 'result-spark-engine'),
+                'message' => esc_html__('You do not have permission to perform this action.', 'result-spark-engine'),
             ]);
         }
-    
+
         $exam_id = isset($_POST['exam_id']) ? absint($_POST['exam_id']) : 0;
         if ($exam_id <= 0) {
             wp_send_json_error([
                 'message' => esc_html__('Invalid exam ID.', 'result-spark-engine'),
             ]);
         }
-    
+
         global $wpdb;
-    
-        $limit  = 10;
-        $offset = 0;
-    
+        $table_name = $wpdb->prefix . 'rse_result';
+
+        // Delete all results for this exam
+        $deleted = $wpdb->delete(
+            $table_name,
+            ['exam_id' => $exam_id],
+            ['%d']
+        );
+
+        if ($deleted === false) {
+            wp_send_json_error([
+                'message' => esc_html__('Failed to clear results. Database error occurred.', 'result-spark-engine'),
+            ]);
+        }
+
+        wp_send_json_success([
+            'message' => sprintf(
+                esc_html__('Successfully cleared %d result(s) for this exam.', 'result-spark-engine'),
+                $deleted
+            ),
+            'deleted_count' => $deleted,
+        ]);
+    }
+
+    /**
+     * Generate results for all students in chunks
+     *
+     * @return void
+     */
+    public function result_generation()
+    {
+        check_ajax_referer('rse_dashboard_nonce', 'nonce');
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error([
+                'message' => esc_html__('You do not have permission.', 'result-spark-engine'),
+            ]);
+        }
+
+        // Set limits for large operations
+        if (function_exists('ini_set')) {
+            @ini_set('memory_limit', '512M');
+            @ini_set('max_execution_time', '300');
+        }
+
+        $exam_id = isset($_POST['exam_id']) ? absint($_POST['exam_id']) : 0;
+        $chunk = isset($_POST['chunk']) ? absint($_POST['chunk']) : 0;
+        $chunk_size = isset($_POST['chunk_size']) ? absint($_POST['chunk_size']) : 50;
+
+        if ($exam_id <= 0) {
+            wp_send_json_error([
+                'message' => esc_html__('Invalid exam ID.', 'result-spark-engine'),
+            ]);
+        }
+
+        global $wpdb;
+
+        // Get total count of students for this exam
+        $total_students = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(DISTINCT student_id) FROM {$wpdb->prefix}rse_mark_entry WHERE exam_id = %d",
+            $exam_id
+        ));
+
+        if ($total_students == 0) {
+            wp_send_json_error([
+                'message' => esc_html__('No students found with marks for this exam.', 'result-spark-engine'),
+            ]);
+        }
+
+        // Process chunk
+        $offset = $chunk * $chunk_size;
         $sql = $wpdb->prepare(
             "
             SELECT 
@@ -1068,26 +1135,36 @@ class RSE_Ajax
             LIMIT %d OFFSET %d
             ",
             $exam_id,
-            $limit,
+            $chunk_size,
             $offset
         );
-    
-        $db_results = $wpdb->get_results($sql, ARRAY_A);
-    
-        $final_results = [];
-    
-        foreach ($db_results as $row) {
 
+        $db_results = $wpdb->get_results($sql, ARRAY_A);
+
+        if (empty($db_results)) {
+            wp_send_json_error([
+                'message' => esc_html__('No more students to process.', 'result-spark-engine'),
+            ]);
+        }
+
+        $processed = 0;
+        $final_results = [];
+
+        foreach ($db_results as $row) {
             $subjects = json_decode($row['subjects_marks'], true);
+            if (empty($subjects)) {
+                continue;
+            }
+
             foreach ($subjects as $key => $subject) {
                 $subjects[$key]['marks'] = json_decode($subject['marks'], true);
             }
-        
+
             $final = $this->generate_final_result($subjects, (int) $row['student_id']);
-        
+
             // Get student roll number from post meta
             $roll_no = get_post_meta($row['student_id'], 'roll_no', true);
-        
+
             $payload = [
                 'student_id' => (int) $row['student_id'],
                 'roll'       => $roll_no ?: '',
@@ -1096,22 +1173,36 @@ class RSE_Ajax
                 'grade'      => $final['grade'],
                 'subjects'   => $final['subjects'],
             ];
-        
-            // ✅ SAVE RESULT
+
+            // Save result
             $this->save_student_result($payload, $exam_id);
-        
+
             $final_results[] = [
                 'student_id' => $payload['student_id'],
                 'roll'       => $payload['roll'],
                 'total_mark' => $payload['total_mark'],
                 'gpa'        => $payload['gpa'],
                 'grade'      => $payload['grade'],
-                'subjects'   => $payload['subjects'],
             ];
+
+            $processed++;
         }
-        
+
+        $total_chunks = ceil($total_students / $chunk_size);
+        $is_complete = ($chunk + 1) >= $total_chunks;
+
         wp_send_json_success([
-            'data' => $final_results
+            'chunk' => $chunk,
+            'processed' => $processed,
+            'total' => $total_students,
+            'is_complete' => $is_complete,
+            'total_chunks' => $total_chunks,
+            'message' => sprintf(
+                esc_html__('Processed %d students (chunk %d of %d).', 'result-spark-engine'),
+                $processed,
+                $chunk + 1,
+                $total_chunks
+            ),
         ]);
     }
     

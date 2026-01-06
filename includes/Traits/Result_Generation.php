@@ -158,18 +158,33 @@ trait Result_Generation
             // Check if this subject is in student's non-major subjects list
             $is_no_major_type = in_array($subject_id, $non_major_subjects);
             
-            // Check if subject failed based on mandatory pass components
-            $subject_failed = $this->check_subject_failed_checker($subject['marks'], $subject_id);
-            
-            // Calculate grade and GPA for this subject
+            // Calculate grade and GPA for this subject FIRST based on total marks
             $gradeData = $this->calculate_grade_point($subject_total, $subject_id);
             
-            // Check if subject failed: mandatory components failed, grade is "F" or "Failed", or GPA is 0.00
+            // Check if grade is F or GPA is 0.00 (this is the primary failure indicator)
             $grade_letter = strtoupper(trim($gradeData['grade']));
             $is_grade_f = ($grade_letter === 'F' || $grade_letter === 'FAILED');
             $is_gpa_zero = ($gradeData['gpa'] == 0.00);
             
-            $subject_is_failed = $subject_failed || $is_grade_f || $is_gpa_zero;
+            // If grade is F or GPA is 0, subject has failed (based on total marks)
+            // Only check mandatory part failures if the grade is NOT F (i.e., total marks passed)
+            $subject_is_failed = $is_grade_f || $is_gpa_zero;
+            
+            // If grade is not F, check if mandatory parts failed
+            // But only fail if the total marks are also below the minimum passing grade range
+            if (!$subject_is_failed) {
+                $mandatory_part_failed = $this->check_subject_failed_checker($subject['marks'], $subject_id);
+                
+                // If mandatory part failed, check if total marks are still in a passing range
+                // Get the minimum passing mark from grade ranges
+                $min_passing_mark = $this->get_minimum_passing_mark($subject_id);
+                
+                if ($mandatory_part_failed && $min_passing_mark > 0 && $subject_total < $min_passing_mark) {
+                    // Mandatory part failed AND total is below minimum passing mark
+                    $subject_is_failed = true;
+                }
+                // If mandatory part failed but total is above minimum passing mark, subject still passes
+            }
             
             // For no major subjects: failure doesn't cause overall failure
             if ($subject_is_failed && !$is_no_major_type) {
@@ -293,6 +308,45 @@ trait Result_Generation
         return (bool) $wpdb->insert($table, $insert_data, $formats);
     }
 }
+    /**
+     * Get minimum passing mark from grade ranges
+     * 
+     * @param int $subject_id Subject ID
+     * @return float Minimum passing mark (0 if not found)
+     */
+    protected function get_minimum_passing_mark(int $subject_id): float
+    {
+        $grade_terms = get_the_terms($subject_id, 'grade');
+        
+        if (empty($grade_terms) || is_wp_error($grade_terms)) {
+            return 0;
+        }
+        
+        $grade_ranges = get_term_meta(
+            $grade_terms[0]->term_id,
+            '_rse_grade_ranges',
+            true
+        );
+        
+        if (empty($grade_ranges) || !is_array($grade_ranges)) {
+            return 0;
+        }
+        
+        // Find the minimum mark that gives a passing grade (not F)
+        $min_passing = null;
+        foreach ($grade_ranges as $range) {
+            $grade = strtoupper(trim($range['grade'] ?? ''));
+            if ($grade !== 'F' && $grade !== 'FAILED') {
+                $min_mark = (float) ($range['min_mark'] ?? 0);
+                if ($min_passing === null || $min_mark < $min_passing) {
+                    $min_passing = $min_mark;
+                }
+            }
+        }
+        
+        return $min_passing !== null ? (float) $min_passing : 0;
+    }
+
     protected function check_subject_failed_checker(array $marks, int $subject_id): bool
     {
         $mark_breakdown = get_post_meta($subject_id, '_rse_mark_breakdown', true);
@@ -316,7 +370,7 @@ trait Result_Generation
                 $pass_mark     = (float) ($part['pass_mark'] ?? 0);
 
                 if ($obtained_mark < $pass_mark) {
-                    // Subject failed due to mandatory part failure
+                    // Mandatory part failed
                     return true;
                 }
             }
