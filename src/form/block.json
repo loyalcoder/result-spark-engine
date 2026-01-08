@@ -16,7 +16,8 @@
 		"core/social-links",
 		"core/page-list",
 		"core/spacer",
-		"core/buttons"
+		"core/buttons",
+		"create-block/example-static"
 	],
 	"example": {},
 	"supports": {

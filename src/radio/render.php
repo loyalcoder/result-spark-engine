@@ -1,12 +1,12 @@
 <?php
 
 /**
- * Dynamic render callback for Radio / Checkbox block
+ * Dynamic render callback for Radio Field block
  */
 
 $attrs = $attributes ?? [];
 
-// Attributes with safe defaults
+// Attributes
 $label        = $attrs['label'] ?? '';
 $options      = $attrs['options'] ?? [];
 $name         = $attrs['name'] ?? '';
@@ -17,7 +17,7 @@ $useTaxonomy  = ! empty($attrs['useTaxonomy']);
 $postType    = $attrs['postType'] ?? '';
 $taxonomy    = $attrs['taxonomy'] ?? '';
 
-// Unique base ID (same idea as uuid in React)
+// Unique ID (equivalent to uuid in editor)
 $baseId = $name . '-' . uniqid();
 ?>
 
@@ -43,7 +43,7 @@ $baseId = $name . '-' . uniqid();
                 ?>
                     <div class="spark-engine-form-check">
                         <input
-                            type="checkbox"
+                            type="radio"
                             name="<?php echo esc_attr($name); ?>"
                             id="<?php echo esc_attr($optionId); ?>"
                             value="<?php echo esc_attr($option['value'] ?? ''); ?>"
@@ -80,7 +80,7 @@ $baseId = $name . '-' . uniqid();
                 ?>
                     <div class="spark-engine-form-check">
                         <input
-                            type="checkbox"
+                            type="radio"
                             name="<?php echo esc_attr($name); ?>"
                             id="<?php echo esc_attr($termId); ?>"
                             value="<?php echo esc_attr($term->slug); ?>"

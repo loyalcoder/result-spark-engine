@@ -30,5 +30,9 @@ registerBlockType(metadata.name, {
 	 * @see ./edit.js
 	 */
 	edit: Edit,
-	save: () => null, // REQUIRED
+
+	/**
+	 * @see ./save.js
+	 */
+	save: () => null,
 });

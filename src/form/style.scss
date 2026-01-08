@@ -5,8 +5,11 @@
  * Replace them with your own styles or remove the file completely.
  */
 
-.wp-block-create-block-copyright-date-block {
-	background-color: #21759b;
-	color: #fff;
-	padding: 2px;
+@use 'editor.scss';
+
+.spe-form {
+	.spe-form-inner-block-props {
+		display: grid;
+		row-gap: 1rem;
+	}
 }
