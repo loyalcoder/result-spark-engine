@@ -63,6 +63,9 @@ $exams = get_posts([
         </div>
     </div>
 
+    <!-- Download All Button Container (for Pro version) -->
+    <div id="rse-pro-download-all-container" style="margin-bottom: 15px; clear: both;"></div>
+
     <!-- Results Container -->
     <div id="rse-results-container" style="background: #fff; padding: 20px; border: 1px solid #ccd0d4; box-shadow: 0 1px 1px rgba(0,0,0,.04); border-radius: 4px;">
         <div id="rse-results-loading" style="text-align: center; padding: 40px; display: none;">
