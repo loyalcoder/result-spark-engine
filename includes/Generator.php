@@ -51,6 +51,5 @@ class Generator
         
         // Taxonomies for subject post type
         $this->register_taxonomy('grade', 'subject');
-        $this->register_taxonomy('optional_subject', 'subject');
     }
 }
